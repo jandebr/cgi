@@ -47,12 +47,13 @@ public class FlatShadingModelImpl implements FlatShadingModel {
 	}
 
 	protected double getBrightnessFactor(Point3D surfacePositionInCamera, PolygonalObject3D object, Scene scene) {
-		double factor = -1.0;
 		Iterator<LightSource> it = scene.getLightSources().iterator();
-		while (factor < 1.0 && it.hasNext()) {
-			factor = Math.max(factor, getBrightnessFactor(it.next(), surfacePositionInCamera, object, scene));
+		double product = 1.0;
+		while (it.hasNext()) {
+			double lightFactor = getBrightnessFactor(it.next(), surfacePositionInCamera, object, scene);
+			product *= 1.0 - (lightFactor + 1.0) / 2.0;
 		}
-		return (factor + 1.0) * getLightReflectionFactor() - 1.0;
+		return (1.0 - product) * 2.0 - 1.0;
 	}
 
 	protected double getBrightnessFactor(LightSource lightSource, Point3D surfacePositionInCamera,
