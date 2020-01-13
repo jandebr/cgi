@@ -84,7 +84,7 @@ public class PolygonalObject3D extends VertexObject3D {
 		Point3D position = ray.intersect(getPlaneInCameraCoordinates(scene.getCamera()));
 		if (position != null) {
 			if (insideBoundingBox(position, scene)) {
-				ObjectSurfacePoint3D point = probeSurfacePoint(position, scene, applyShading);
+				ObjectSurfacePoint3D point = sampleSurfacePoint(position, scene, applyShading);
 				if (point != null) {
 					intersections.add(point);
 				}
@@ -109,7 +109,7 @@ public class PolygonalObject3D extends VertexObject3D {
 		return bbox.contains(positionInCamera);
 	}
 
-	protected ObjectSurfacePoint3D probeSurfacePoint(Point3D positionInCamera, Scene scene, boolean applyShading) {
+	protected ObjectSurfacePoint3D sampleSurfacePoint(Point3D positionInCamera, Scene scene, boolean applyShading) {
 		return null; // Subclasses should override this for ray tracing
 	}
 

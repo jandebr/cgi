@@ -30,6 +30,8 @@ public class FlatShadingModelImpl implements FlatShadingModel {
 	 */
 	private double lightGlossFactor;
 
+	private static final double APPROXIMATE_ZERO = 0.000001;
+
 	public FlatShadingModelImpl() {
 		this(1.0, 3.0);
 	}
@@ -95,7 +97,9 @@ public class FlatShadingModelImpl implements FlatShadingModel {
 				rayFromSurfacePositionToLightSource, true);
 		while (translucency > 0 && intersectionsWithRay.hasNext()) {
 			ObjectSurfacePoint3D intersection = intersectionsWithRay.next();
-			if (intersection.getObject() != self) {
+			double distance = intersection.getPositionInCamera()
+					.distanceTo(rayFromSurfacePositionToLightSource.getP1());
+			if (intersection.getObject() != self && distance >= APPROXIMATE_ZERO) {
 				translucency *= Compositing.getTransparency(intersection.getColor());
 			}
 		}

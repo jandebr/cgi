@@ -61,7 +61,7 @@ public class SimpleFace3D extends PolygonalObject3D {
 	}
 
 	@Override
-	protected ObjectSurfacePoint3D probeSurfacePoint(Point3D positionInCamera, Scene scene, boolean applyShading) {
+	protected ObjectSurfacePoint3D sampleSurfacePoint(Point3D positionInCamera, Scene scene, boolean applyShading) {
 		ObjectSurfacePoint3D result = null;
 		if (containsPointInCameraCoordinates(positionInCamera, scene)) {
 			Color color = isFrontFacing(scene) ? getFrontColor() : getBackColor();
