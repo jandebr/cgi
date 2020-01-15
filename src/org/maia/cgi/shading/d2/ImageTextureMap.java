@@ -28,8 +28,8 @@ public class ImageTextureMap implements TextureMap {
 	public int sampleInt(double x, double y) {
 		int value = -1;
 		if (isInsideImage(x, y)) {
-			int px = (int) Math.round(x);
-			int py = (int) Math.round(y);
+			int px = (int) Math.floor(x);
+			int py = (int) Math.floor(y);
 			value = getImage().getRGB(px, py);
 		}
 		return value;
@@ -45,8 +45,8 @@ public class ImageTextureMap implements TextureMap {
 	}
 
 	protected boolean isInsideImage(double x, double y) {
-		int px = (int) Math.round(x);
-		int py = (int) Math.round(y);
+		int px = (int) Math.floor(x);
+		int py = (int) Math.floor(y);
 		return px >= 0 && py >= 0 && px < getImage().getWidth() && py < getImage().getHeight();
 	}
 
