@@ -33,4 +33,9 @@ public class ObjectSurfacePoint3DImpl implements ObjectSurfacePoint3D {
 		return color;
 	}
 
+	@Override
+	public void setColor(Color color) {
+		this.color = color;
+	}
+
 }

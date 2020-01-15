@@ -62,21 +62,27 @@ public class SimpleFace3D extends PolygonalObject3D {
 
 	@Override
 	protected ObjectSurfacePoint3D sampleSurfacePoint(Point3D positionInCamera, Scene scene, boolean applyShading) {
-		ObjectSurfacePoint3D result = null;
+		ObjectSurfacePoint3D surfacePoint = null;
 		if (containsPointInCameraCoordinates(positionInCamera, scene)) {
-			Color color = isFrontFacing(scene) ? getFrontColor() : getBackColor();
-			if (applyShading) {
-				color = getShadingModel().applyShading(color, positionInCamera, this, scene);
+			Color color = sampleBaseColor(positionInCamera, scene);
+			if (color != null) {
+				surfacePoint = new ObjectSurfacePoint3DImpl(this, positionInCamera, color);
+				if (applyShading) {
+					getShadingModel().applyShading(surfacePoint, scene);
+				}
 			}
-			result = new ObjectSurfacePoint3DImpl(this, positionInCamera, color);
 		}
-		return result;
+		return surfacePoint;
 	}
 
-	protected boolean containsPointInCameraCoordinates(Point3D point, Scene scene) {
+	protected boolean containsPointInCameraCoordinates(Point3D positionInCamera, Scene scene) {
 		ProjectionState ps = getProjectionState();
 		ps.setScene(scene);
-		return ps.getPolygon().contains(ps.project(point)); // inside-test with 2D-projected polygon
+		return ps.getPolygon().contains(ps.project(positionInCamera)); // inside-test with 2D-projected polygon
+	}
+
+	protected Color sampleBaseColor(Point3D positionInCamera, Scene scene) {
+		return isFrontFacing(scene) ? getFrontColor() : getBackColor();
 	}
 
 	protected boolean isFrontFacing(Scene scene) {

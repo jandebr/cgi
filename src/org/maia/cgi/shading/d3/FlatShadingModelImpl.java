@@ -42,7 +42,15 @@ public class FlatShadingModelImpl implements FlatShadingModel {
 	}
 
 	@Override
-	public Color applyShading(Color surfaceColor, Point3D surfacePositionInCamera, PolygonalObject3D object, Scene scene) {
+	public void applyShading(ObjectSurfacePoint3D surfacePoint, Scene scene) {
+		Object3D object = surfacePoint.getObject();
+		if (object instanceof PolygonalObject3D) {
+			surfacePoint.setColor(recolor(surfacePoint.getColor(), surfacePoint.getPositionInCamera(),
+					(PolygonalObject3D) object, scene));
+		}
+	}
+
+	protected Color recolor(Color surfaceColor, Point3D surfacePositionInCamera, PolygonalObject3D object, Scene scene) {
 		return Compositing.adjustBrightness(surfaceColor, getBrightnessFactor(surfacePositionInCamera, object, scene));
 	}
 
