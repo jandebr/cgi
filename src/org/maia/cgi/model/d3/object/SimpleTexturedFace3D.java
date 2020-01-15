@@ -51,7 +51,25 @@ public class SimpleTexturedFace3D extends SimpleFace3D {
 	public SimpleTexturedFace3D(FlatShadingModel shadingModel, TextureMapHandle pictureMapHandle, int pictureWidth,
 			int pictureHeight, TextureMapHandle luminanceMapHandle, TextureMapHandle transparencyMapHandle,
 			Mask pictureMask) {
-		super(null, shadingModel, createCanonicalVertices());
+		this(null, shadingModel, pictureMapHandle, pictureWidth, pictureHeight, luminanceMapHandle,
+				transparencyMapHandle, pictureMask);
+	}
+
+	public SimpleTexturedFace3D(Color pictureColor, FlatShadingModel shadingModel, int pictureWidth, int pictureHeight,
+			TextureMapHandle luminanceMapHandle) {
+		this(pictureColor, shadingModel, pictureWidth, pictureHeight, luminanceMapHandle, null, null);
+	}
+
+	public SimpleTexturedFace3D(Color pictureColor, FlatShadingModel shadingModel, int pictureWidth, int pictureHeight,
+			TextureMapHandle luminanceMapHandle, TextureMapHandle transparencyMapHandle, Mask pictureMask) {
+		this(pictureColor, shadingModel, null, pictureWidth, pictureHeight, luminanceMapHandle, transparencyMapHandle,
+				pictureMask);
+	}
+
+	private SimpleTexturedFace3D(Color pictureColor, FlatShadingModel shadingModel, TextureMapHandle pictureMapHandle,
+			int pictureWidth, int pictureHeight, TextureMapHandle luminanceMapHandle,
+			TextureMapHandle transparencyMapHandle, Mask pictureMask) {
+		super(pictureColor, shadingModel, createCanonicalVertices());
 		this.objectToPictureTransformMatrix = createObjectToPictureTransformMatrix(pictureWidth, pictureHeight);
 		this.pictureMapHandle = pictureMapHandle;
 		this.luminanceMapHandle = luminanceMapHandle;
@@ -98,8 +116,13 @@ public class SimpleTexturedFace3D extends SimpleFace3D {
 
 	@Override
 	protected Color sampleBaseColor(Point3D positionInCamera, Scene scene) {
-		Point3D picturePosition = fromCameraToPictureCoordinates(positionInCamera, scene.getCamera());
-		return getPictureMap().sampleColor(picturePosition.getX(), picturePosition.getZ());
+		TextureMap map = getPictureMap();
+		if (map != null) {
+			Point3D picturePosition = fromCameraToPictureCoordinates(positionInCamera, scene.getCamera());
+			return map.sampleColor(picturePosition.getX(), picturePosition.getZ());
+		} else {
+			return getFrontColor();
+		}
 	}
 
 	protected void applyLuminance(ObjectSurfacePoint3D surfacePoint, Scene scene) {
@@ -159,7 +182,8 @@ public class SimpleTexturedFace3D extends SimpleFace3D {
 	}
 
 	protected TextureMap getPictureMap() {
-		return TextureMapRegistry.getInstance().getTextureMap(getPictureMapHandle());
+		return getPictureMapHandle() == null ? null : TextureMapRegistry.getInstance().getTextureMap(
+				getPictureMapHandle());
 	}
 
 	protected TextureMap getLuminanceMap() {
