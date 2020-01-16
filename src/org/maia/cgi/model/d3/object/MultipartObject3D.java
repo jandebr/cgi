@@ -53,10 +53,12 @@ public class MultipartObject3D<T extends ComposableObject3D> extends BaseObject3
 			Object3D part = it.next();
 			if (part.isBounded()) {
 				Box3D partBox = part.asBoundedObject().getBoundingBox(cframe, camera);
-				if (bbox == null) {
-					bbox = partBox.clone();
-				} else {
-					bbox.expandToContain(partBox);
+				if (partBox != null) {
+					if (bbox == null) {
+						bbox = partBox.clone();
+					} else {
+						bbox.expandToContain(partBox);
+					}
 				}
 			}
 		}
