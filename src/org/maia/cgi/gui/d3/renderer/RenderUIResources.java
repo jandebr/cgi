@@ -123,6 +123,10 @@ public class RenderUIResources {
 
 	public static final String shadowsToolTipText = "Renders shadows cast by light sources";
 
+	public static final String backdropLabel = "Backdrop";
+
+	public static final String backdropToolTipText = "Renders any backdrop drawings";
+
 	public static final String superSamplingLabel = "Super-sampling";
 
 	public static final String superSamplingToolTipText = "Produces a higher quality rendering by interpolating a set of sample points per pixel";

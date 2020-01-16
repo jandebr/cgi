@@ -13,6 +13,8 @@ public class SceneRenderParameters {
 
 	private boolean shadowsEnabled;
 
+	private boolean backdropEnabled;
+
 	private Color ambientColor;
 
 	public SceneRenderParameters() {
@@ -40,6 +42,14 @@ public class SceneRenderParameters {
 
 	public void setShadowsEnabled(boolean shadowsEnabled) {
 		this.shadowsEnabled = shadowsEnabled;
+	}
+
+	public boolean isBackdropEnabled() {
+		return backdropEnabled;
+	}
+
+	public void setBackdropEnabled(boolean backdropEnabled) {
+		this.backdropEnabled = backdropEnabled;
 	}
 
 	public Color getAmbientColor() {

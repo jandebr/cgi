@@ -299,7 +299,7 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 			}
 			// From backdrop, if any
 			ColorDepthBuffer backDrop = getScene().getBackdrop();
-			if (backDrop != null) {
+			if (backDrop != null && getScene().getRenderParameters().isBackdropEnabled()) {
 				Color color = backDrop.getColor(ix, iy);
 				double depth = backDrop.getDepth(ix, iy);
 				double z = -depth;

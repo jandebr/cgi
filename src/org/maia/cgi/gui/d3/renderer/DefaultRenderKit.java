@@ -29,6 +29,7 @@ public class DefaultRenderKit implements RenderKit {
 
 	protected SceneRenderer createRealisticSceneRenderer(Scene scene, RenderOptions options) {
 		scene.getRenderParameters().setShadowsEnabled(options.isShadowsEnabled());
+		scene.getRenderParameters().setBackdropEnabled(options.isBackdropEnabled());
 		int spp = options.isSuperSamplingEnabled() ? 3 : 1; // samples per pixel (in either direction)
 		DepthBlurParameters depthBlur = options.isDepthBlurEnabled() ? scene.getRenderParameters()
 				.getDepthBlurParameters() : null;

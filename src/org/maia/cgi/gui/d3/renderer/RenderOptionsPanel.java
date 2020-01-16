@@ -30,6 +30,8 @@ public class RenderOptionsPanel extends Box {
 
 	private RenderOptionCheckbox shadowsCheckbox;
 
+	private RenderOptionCheckbox backdropCheckbox;
+
 	private RenderOptionCheckbox superSamplingCheckbox;
 
 	private RenderOptionCheckbox depthBlurCheckbox;
@@ -44,6 +46,7 @@ public class RenderOptionsPanel extends Box {
 		super(BoxLayout.Y_AXIS);
 		this.magnificationButtonGroup = createMagnificationButtonGroup();
 		this.shadowsCheckbox = createShadowsCheckbox();
+		this.backdropCheckbox = createBackdropCheckbox();
 		this.superSamplingCheckbox = createSuperSamplingCheckbox();
 		this.depthBlurCheckbox = createDepthBlurCheckbox();
 		this.observers = new Vector<RenderOptionsPanelObserver>();
@@ -63,6 +66,10 @@ public class RenderOptionsPanel extends Box {
 		return new RenderOptionCheckbox(new ShadowsAction());
 	}
 
+	protected RenderOptionCheckbox createBackdropCheckbox() {
+		return new RenderOptionCheckbox(new BackdropAction());
+	}
+
 	protected RenderOptionCheckbox createSuperSamplingCheckbox() {
 		return new RenderOptionCheckbox(new SuperSamplingAction());
 	}
@@ -77,6 +84,7 @@ public class RenderOptionsPanel extends Box {
 		add(getShadowsCheckbox());
 		add(getSuperSamplingCheckbox());
 		add(getDepthBlurCheckbox());
+		add(getBackdropCheckbox());
 	}
 
 	protected JComponent buildMagnificationButtonPanel() {
@@ -95,6 +103,7 @@ public class RenderOptionsPanel extends Box {
 		setOriginalRenderHeight(renderOptions.getRenderHeight());
 		getMagnificationButtonGroup().getElements().nextElement().setSelected(true); // original size
 		getShadowsCheckbox().setSelected(renderOptions.isShadowsEnabled());
+		getBackdropCheckbox().setSelected(renderOptions.isBackdropEnabled());
 		getSuperSamplingCheckbox().setSelected(renderOptions.isSuperSamplingEnabled());
 		getDepthBlurCheckbox().setSelected(renderOptions.isDepthBlurEnabled());
 	}
@@ -107,6 +116,7 @@ public class RenderOptionsPanel extends Box {
 			buttons.nextElement().setEnabled(enabled);
 		}
 		getShadowsCheckbox().setEnabled(enabled);
+		getBackdropCheckbox().setEnabled(enabled);
 		getSuperSamplingCheckbox().setEnabled(enabled);
 		getDepthBlurCheckbox().setEnabled(enabled);
 	}
@@ -162,6 +172,10 @@ public class RenderOptionsPanel extends Box {
 		return shadowsCheckbox;
 	}
 
+	private RenderOptionCheckbox getBackdropCheckbox() {
+		return backdropCheckbox;
+	}
+
 	private RenderOptionCheckbox getSuperSamplingCheckbox() {
 		return superSamplingCheckbox;
 	}
@@ -204,6 +218,21 @@ public class RenderOptionsPanel extends Box {
 		@Override
 		public void actionPerformed(ActionEvent event) {
 			getRenderOptions().setShadowsEnabled(getShadowsCheckbox().isSelected());
+			fireRenderOptionsChangedEvent();
+		}
+
+	}
+
+	private class BackdropAction extends AbstractAction {
+
+		public BackdropAction() {
+			super(RenderUIResources.backdropLabel);
+			putValue(Action.SHORT_DESCRIPTION, RenderUIResources.backdropToolTipText);
+		}
+
+		@Override
+		public void actionPerformed(ActionEvent event) {
+			getRenderOptions().setBackdropEnabled(getBackdropCheckbox().isSelected());
 			fireRenderOptionsChangedEvent();
 		}
 

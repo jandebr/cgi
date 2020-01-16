@@ -12,6 +12,8 @@ public class RenderOptions {
 
 	private boolean shadowsEnabled;
 
+	private boolean backdropEnabled;
+
 	private boolean superSamplingEnabled;
 
 	private boolean depthBlurEnabled;
@@ -31,6 +33,7 @@ public class RenderOptions {
 		options.setRenderWidth(1280);
 		options.setRenderHeight(720);
 		options.setShadowsEnabled(false);
+		options.setBackdropEnabled(false);
 		options.setSuperSamplingEnabled(false);
 		options.setDepthBlurEnabled(false);
 		options.setSceneBackgroundColor(Color.WHITE);
@@ -73,6 +76,14 @@ public class RenderOptions {
 
 	public void setShadowsEnabled(boolean shadowsEnabled) {
 		this.shadowsEnabled = shadowsEnabled;
+	}
+
+	public boolean isBackdropEnabled() {
+		return backdropEnabled;
+	}
+
+	public void setBackdropEnabled(boolean backdropEnabled) {
+		this.backdropEnabled = backdropEnabled;
 	}
 
 	public boolean isSuperSamplingEnabled() {
