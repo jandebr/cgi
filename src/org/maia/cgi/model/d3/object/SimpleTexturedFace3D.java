@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Vector;
 
 import org.maia.cgi.compose.Compositing;
+import org.maia.cgi.geometry.d2.Rectangle2D;
 import org.maia.cgi.geometry.d3.Point3D;
 import org.maia.cgi.model.d3.camera.Camera;
 import org.maia.cgi.model.d3.scene.Scene;
@@ -33,44 +34,43 @@ public class SimpleTexturedFace3D extends SimpleFace3D {
 
 	private Point3D positionInPicture; // cached from last transformation
 
-	public SimpleTexturedFace3D(FlatShadingModel shadingModel, TextureMapHandle pictureMapHandle, int pictureWidth,
-			int pictureHeight) {
-		this(shadingModel, pictureMapHandle, pictureWidth, pictureHeight, null, null, null);
+	public SimpleTexturedFace3D(FlatShadingModel shadingModel, TextureMapHandle pictureMapHandle,
+			PictureRegion pictureRegion) {
+		this(shadingModel, pictureMapHandle, pictureRegion, null, null, null);
 	}
 
-	public SimpleTexturedFace3D(FlatShadingModel shadingModel, TextureMapHandle pictureMapHandle, int pictureWidth,
-			int pictureHeight, Mask pictureMask) {
-		this(shadingModel, pictureMapHandle, pictureWidth, pictureHeight, null, null, pictureMask);
+	public SimpleTexturedFace3D(FlatShadingModel shadingModel, TextureMapHandle pictureMapHandle,
+			PictureRegion pictureRegion, Mask pictureMask) {
+		this(shadingModel, pictureMapHandle, pictureRegion, null, null, pictureMask);
 	}
 
-	public SimpleTexturedFace3D(FlatShadingModel shadingModel, TextureMapHandle pictureMapHandle, int pictureWidth,
-			int pictureHeight, TextureMapHandle luminanceMapHandle) {
-		this(shadingModel, pictureMapHandle, pictureWidth, pictureHeight, luminanceMapHandle, null, null);
+	public SimpleTexturedFace3D(FlatShadingModel shadingModel, TextureMapHandle pictureMapHandle,
+			PictureRegion pictureRegion, TextureMapHandle luminanceMapHandle) {
+		this(shadingModel, pictureMapHandle, pictureRegion, luminanceMapHandle, null, null);
 	}
 
-	public SimpleTexturedFace3D(FlatShadingModel shadingModel, TextureMapHandle pictureMapHandle, int pictureWidth,
-			int pictureHeight, TextureMapHandle luminanceMapHandle, TextureMapHandle transparencyMapHandle,
+	public SimpleTexturedFace3D(FlatShadingModel shadingModel, TextureMapHandle pictureMapHandle,
+			PictureRegion pictureRegion, TextureMapHandle luminanceMapHandle, TextureMapHandle transparencyMapHandle,
 			Mask pictureMask) {
-		this(null, shadingModel, pictureMapHandle, pictureWidth, pictureHeight, luminanceMapHandle,
-				transparencyMapHandle, pictureMask);
-	}
-
-	public SimpleTexturedFace3D(Color pictureColor, FlatShadingModel shadingModel, int pictureWidth, int pictureHeight,
-			TextureMapHandle luminanceMapHandle) {
-		this(pictureColor, shadingModel, pictureWidth, pictureHeight, luminanceMapHandle, null, null);
-	}
-
-	public SimpleTexturedFace3D(Color pictureColor, FlatShadingModel shadingModel, int pictureWidth, int pictureHeight,
-			TextureMapHandle luminanceMapHandle, TextureMapHandle transparencyMapHandle, Mask pictureMask) {
-		this(pictureColor, shadingModel, null, pictureWidth, pictureHeight, luminanceMapHandle, transparencyMapHandle,
+		this(null, shadingModel, pictureMapHandle, pictureRegion, luminanceMapHandle, transparencyMapHandle,
 				pictureMask);
 	}
 
+	public SimpleTexturedFace3D(Color pictureColor, FlatShadingModel shadingModel, PictureRegion pictureRegion,
+			TextureMapHandle luminanceMapHandle) {
+		this(pictureColor, shadingModel, pictureRegion, luminanceMapHandle, null, null);
+	}
+
+	public SimpleTexturedFace3D(Color pictureColor, FlatShadingModel shadingModel, PictureRegion pictureRegion,
+			TextureMapHandle luminanceMapHandle, TextureMapHandle transparencyMapHandle, Mask pictureMask) {
+		this(pictureColor, shadingModel, null, pictureRegion, luminanceMapHandle, transparencyMapHandle, pictureMask);
+	}
+
 	private SimpleTexturedFace3D(Color pictureColor, FlatShadingModel shadingModel, TextureMapHandle pictureMapHandle,
-			int pictureWidth, int pictureHeight, TextureMapHandle luminanceMapHandle,
-			TextureMapHandle transparencyMapHandle, Mask pictureMask) {
+			PictureRegion pictureRegion, TextureMapHandle luminanceMapHandle, TextureMapHandle transparencyMapHandle,
+			Mask pictureMask) {
 		super(pictureColor, shadingModel, createCanonicalVertices());
-		this.objectToPictureTransformMatrix = createObjectToPictureTransformMatrix(pictureWidth, pictureHeight);
+		this.objectToPictureTransformMatrix = pictureRegion.createObjectToPictureTransformMatrix();
 		this.pictureMapHandle = pictureMapHandle;
 		this.luminanceMapHandle = luminanceMapHandle;
 		this.transparencyMapHandle = transparencyMapHandle;
@@ -214,6 +214,38 @@ public class SimpleTexturedFace3D extends SimpleFace3D {
 
 	protected Mask getPictureMask() {
 		return pictureMask;
+	}
+
+	public static class PictureRegion extends Rectangle2D {
+
+		public PictureRegion(int width, int height) {
+			super(width, height);
+		}
+
+		public PictureRegion(double width, double height) {
+			super(width, height);
+		}
+
+		public PictureRegion(int x1, int x2, int y1, int y2) {
+			super(x1, x2, y1, y2);
+		}
+
+		public PictureRegion(double x1, double x2, double y1, double y2) {
+			super(x1, x2, y1, y2);
+		}
+
+		public TransformMatrix createObjectToPictureTransformMatrix() {
+			TwoWayCompositeTransform ct = new TwoWayCompositeTransform();
+			// picture in XZ-plane (iso XY)
+			double x1 = getX1();
+			double x2 = getX2();
+			double z1 = getY1();
+			double z2 = getY2();
+			ct.then(Transformation.getTranslationMatrix(-(x1 + x2) / 2.0, 0, -(z1 + z2) / 2.0));
+			ct.then(Transformation.getScalingMatrix(2.0 / (x2 - x1), 1.0, 2.0 / (z2 - z1)));
+			return ct.getReverseCompositeMatrix();
+		}
+
 	}
 
 }
