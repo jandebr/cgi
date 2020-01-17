@@ -108,6 +108,24 @@ public class ModelBuilderUtils {
 		return (BaseObject3D) buildUnityCube(color, shadingModel).scale(width / 2.0, height / 2.0, depth / 2.0);
 	}
 
+	public static PolygonalObject3D buildRoundedRectangleXY(double width, double height, double cornerRadiusX,
+			double cornerRadiusY, double precision) {
+		int nc = 3 + (int) Math.ceil(precision / 0.2);
+		List<Point3D> vertices = new Vector<Point3D>(nc * 4);
+		for (int q = 0; q < 4; q++) {
+			double xc = (width / 2.0 - cornerRadiusX) * (q <= 1 ? 1 : -1);
+			double yc = (height / 2.0 - cornerRadiusY) * (q == 0 || q == 3 ? 1 : -1);
+			double startAngle = Math.PI / 2.0 * (1.0 - q);
+			for (int i = 0; i < nc; i++) {
+				double angle = startAngle - Math.PI / 2.0 * i / (nc - 1);
+				double x = xc + cornerRadiusX * Math.cos(angle);
+				double y = yc + cornerRadiusY * Math.sin(angle);
+				vertices.add(new Point3D(x, y, 0));
+			}
+		}
+		return new PolygonalObject3D(vertices);
+	}
+
 	public static BaseObject3D buildSphere(double radius, int vertexCount, Color color, FlatShadingModel shadingModel) {
 		double e = 0.005;
 		int nlayers = vertexCount / 2;
