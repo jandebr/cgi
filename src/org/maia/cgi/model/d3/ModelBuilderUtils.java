@@ -157,6 +157,20 @@ public class ModelBuilderUtils {
 		return new PolygonalObject3D(vertices);
 	}
 
+	public static PolygonalObject3D buildSqueezedCircularShapeXY(double radius, double squeezeFactorX,
+			double squeezeFactorY, int vertexCount) {
+		List<Point3D> vertices = new Vector<Point3D>(vertexCount);
+		for (int i = 0; i < vertexCount; i++) {
+			double angle = 2.0 * Math.PI * i / vertexCount;
+			double cos = Math.cos(angle);
+			double sin = Math.sin(angle);
+			double x = radius * Math.signum(cos) * Math.pow(Math.abs(cos), squeezeFactorX);
+			double y = radius * Math.signum(sin) * Math.pow(Math.abs(sin), squeezeFactorY);
+			vertices.add(new Point3D(x, y, 0));
+		}
+		return new PolygonalObject3D(vertices);
+	}
+
 	public static BaseObject3D buildExtrusion(PolygonalObject3D shapeXY, double depth, Color color,
 			FlatShadingModel shadingModel) {
 		return buildSlantedExtrusion(shapeXY, depth, 0, 0, color, shadingModel);
