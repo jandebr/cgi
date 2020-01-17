@@ -1,5 +1,6 @@
 package org.maia.cgi.model.d3.object;
 
+import org.maia.cgi.geometry.d3.Vector3D;
 import org.maia.cgi.transform.d3.TransformMatrix;
 
 public interface TransformableObject3D extends Object3D {
@@ -11,6 +12,8 @@ public interface TransformableObject3D extends Object3D {
 	TransformableObject3D translateZ(double distance);
 
 	TransformableObject3D translate(double dx, double dy, double dz);
+
+	TransformableObject3D translate(Vector3D vector);
 
 	TransformableObject3D scaleX(double scale);
 

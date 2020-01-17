@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Vector;
 
 import org.maia.cgi.geometry.d3.Box3D;
+import org.maia.cgi.geometry.d3.Vector3D;
 import org.maia.cgi.model.d3.CoordinateFrame;
 import org.maia.cgi.model.d3.camera.Camera;
 import org.maia.cgi.transform.d3.TransformMatrix;
@@ -100,6 +101,11 @@ public abstract class BaseObject3D implements BoundedObject3D, ComposableObject3
 	@Override
 	public BaseObject3D translate(double dx, double dy, double dz) {
 		return transform(Transformation.getTranslationMatrix(dx, dy, dz));
+	}
+
+	@Override
+	public TransformableObject3D translate(Vector3D vector) {
+		return translate(vector.getX(), vector.getY(), vector.getZ());
 	}
 
 	@Override
