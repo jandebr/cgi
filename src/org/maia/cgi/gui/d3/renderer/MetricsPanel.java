@@ -72,7 +72,7 @@ public class MetricsPanel extends JPanel {
 		panel.add(buildMetricValueLabel(computeMetrics.getVectorCrossProducts()));
 		panel.add(buildMetricNameLabel("Vector normalizations"));
 		panel.add(buildMetricValueLabel(computeMetrics.getVectorNormalizations()));
-		panel.add(buildMetricNameLabel("Vector angles in between"));
+		panel.add(buildMetricNameLabel("Vector angles"));
 		panel.add(buildMetricValueLabel(computeMetrics.getVectorAnglesInBetween()));
 		panel.add(buildMetricNameLabel("Line with plane intersections"));
 		panel.add(buildMetricValueLabel(computeMetrics.getLineWithPlaneIntersections()));
