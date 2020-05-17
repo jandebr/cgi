@@ -93,20 +93,22 @@ public class ShapeContourTracer {
 	}
 
 	private boolean onEdge(int xi, int yi, BufferedImage image, int shapeRGB) {
-		// (xi,yi) inside shape
-		if (image.getRGB(xi, yi) != shapeRGB)
-			return false;
-		// At least one neighbouring pixel outside shape (or image)
 		int width = image.getWidth();
 		int height = image.getHeight();
-		for (PixelCoords point : getNeighbourhoodPerimeter().getPoints()) {
-			int xn = xi + point.getX();
-			int yn = yi + point.getY();
-			if (xn >= 0 && xn < width && yn >= 0 && yn < height) {
-				if (image.getRGB(xn, yn) != shapeRGB)
-					return true;
-			} else {
-				return true;
+		if (xi >= 0 && xi < width && yi >= 0 && yi < height) {
+			// (xi,yi) inside shape
+			if (image.getRGB(xi, yi) == shapeRGB) {
+				// At least one neighbouring pixel outside shape (or image)
+				for (PixelCoords point : getNeighbourhoodPerimeter().getPoints()) {
+					int xn = xi + point.getX();
+					int yn = yi + point.getY();
+					if (xn >= 0 && xn < width && yn >= 0 && yn < height) {
+						if (image.getRGB(xn, yn) != shapeRGB)
+							return true;
+					} else {
+						return true;
+					}
+				}
 			}
 		}
 		return false;
@@ -120,12 +122,39 @@ public class ShapeContourTracer {
 
 		private List<PixelCoords> points;
 
-		public ShapeContour() {
-			this.points = new Vector<PixelCoords>(100);
+		private ShapeContour() {
+			this(new Vector<PixelCoords>(100));
+		}
+
+		private ShapeContour(List<PixelCoords> points) {
+			this.points = points;
 		}
 
 		public int getNumberOfPoints() {
 			return getPoints().size();
+		}
+
+		public ShapeContour compact() {
+			List<PixelCoords> compactPoints = new Vector<PixelCoords>(getNumberOfPoints());
+			for (int i = 0; i < getNumberOfPoints(); i++) {
+				PixelCoords previousPoint = i > 0 ? getPoints().get(i - 1) : null;
+				PixelCoords currentPoint = getPoints().get(i);
+				PixelCoords nextPoint = i < getNumberOfPoints() - 1 ? getPoints().get(i + 1) : null;
+				boolean includeCurrent = true;
+				if (previousPoint != null && nextPoint != null) {
+					boolean isVertical = previousPoint.getX() == currentPoint.getX()
+							&& nextPoint.getX() == currentPoint.getX();
+					boolean isHorizontal = previousPoint.getY() == currentPoint.getY()
+							&& nextPoint.getY() == currentPoint.getY();
+					if (isVertical || isHorizontal) {
+						includeCurrent = false; // leave out currentPoint
+					}
+				}
+				if (includeCurrent) {
+					compactPoints.add(currentPoint);
+				}
+			}
+			return new ShapeContour(compactPoints);
 		}
 
 		@Override
