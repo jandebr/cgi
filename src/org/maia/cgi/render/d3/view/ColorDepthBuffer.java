@@ -113,7 +113,7 @@ public class ColorDepthBuffer {
 		setImage(newImage);
 	}
 
-	private BufferedImage getImage() {
+	public BufferedImage getImage() {
 		return image;
 	}
 
