@@ -18,10 +18,30 @@ public class ShapeContourTracer {
 		this.neighbourhoodPerimeter = Perimeter.createNeighbourhoodPerimeter();
 	}
 
+	/**
+	 * Traces the contour of a shape in an image
+	 * 
+	 * @param image
+	 *            The image
+	 * @param shapeColor
+	 *            The solid color of the shape
+	 * @return The contour of the shape, as a polyline marking the shape's boundary
+	 */
 	public ShapeContour traceContour(BufferedImage image, Color shapeColor) {
 		return traceContour(image, shapeColor, 5.0);
 	}
 
+	/**
+	 * Traces the contour of a shape in an image
+	 * 
+	 * @param image
+	 *            The image
+	 * @param shapeColor
+	 *            The solid color of the shape
+	 * @param distanceBetweenPoints
+	 *            The target distance between interpolating points on the contour
+	 * @return The contour of the shape, as a polyline marking the shape's boundary
+	 */
 	public ShapeContour traceContour(BufferedImage image, Color shapeColor, double distanceBetweenPoints) {
 		ShapeContour contour = null;
 		int shapeRGB = shapeColor.getRGB();
