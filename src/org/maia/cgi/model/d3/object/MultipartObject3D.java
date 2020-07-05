@@ -21,6 +21,10 @@ public class MultipartObject3D<T extends ComposableObject3D> extends BaseObject3
 
 	public MultipartObject3D(Collection<T> parts) {
 		this();
+		addParts(parts);
+	}
+
+	public void addParts(Collection<T> parts) {
 		for (T part : parts) {
 			addPart(part);
 		}
