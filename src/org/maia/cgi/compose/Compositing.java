@@ -128,6 +128,20 @@ public class Compositing {
 		return image;
 	}
 
+	public static void writeImageToFile(BufferedImage image, String filePath) {
+		String format = "png";
+		int i = filePath.lastIndexOf('.');
+		if (i > 0) {
+			format = filePath.substring(i + 1).toLowerCase();
+		}
+		try {
+			ImageIO.write(image, format, new File(filePath));
+		} catch (IOException e) {
+			System.err.println("Failed to write image to path '" + filePath + "'");
+			e.printStackTrace();
+		}
+	}
+
 	public static BufferedImage scaleImage(BufferedImage image, double scale) {
 		return scaleImage(image, scale, scale);
 	}
