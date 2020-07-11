@@ -2,6 +2,19 @@ package org.maia.cgi.geometry.d3;
 
 import org.maia.cgi.model.d3.camera.MovableCamera;
 
+/**
+ * Tracks the position and orientation when moving along a <code>Curve3D</code>
+ * 
+ * <p>
+ * When created, the virtual position is at the start of the curve. There are methods to {@linkplain #advance(double)
+ * advance} or {@linkplain #reverse(double) reverse} a certain distance along the curve. One can also move to a specific
+ * position using the methods {@linkplain #locate(double) locate}, {@linkplain #moveToStart() moveToStart} and
+ * {@linkplain #moveToEnd() moveToEnd}. The current position can be requested using {@link #getCurrentLocation()}. It
+ * returns an instance of {@linkplain Location} which holds both a position and an {@linkplain Orientation} in 3D.
+ * </p>
+ * 
+ * @see Curve3D
+ */
 public class Trajectory3D {
 
 	private Curve3D curve;
