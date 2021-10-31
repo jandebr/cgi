@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.util.Iterator;
 
 import org.maia.cgi.compose.Compositing;
+import org.maia.cgi.compose.d3.DepthFunction;
 import org.maia.cgi.geometry.d3.LineSegment3D;
 import org.maia.cgi.geometry.d3.Point3D;
 import org.maia.cgi.geometry.d3.Vector3D;
@@ -51,7 +52,10 @@ public class FlatShadingModelImpl implements FlatShadingModel {
 	}
 
 	protected Color recolor(Color surfaceColor, Point3D surfacePositionInCamera, PolygonalObject3D object, Scene scene) {
-		return Compositing.adjustBrightness(surfaceColor, getBrightnessFactor(surfacePositionInCamera, object, scene));
+		Color color = surfaceColor;
+		color = Compositing.adjustBrightness(color, getBrightnessFactor(surfacePositionInCamera, object, scene));
+		color = Compositing.adjustBrightness(color, -getDarknessFactorByDepth(surfacePositionInCamera, scene));
+		return color;
 	}
 
 	protected double getBrightnessFactor(Point3D surfacePositionInCamera, PolygonalObject3D object, Scene scene) {
@@ -115,6 +119,16 @@ public class FlatShadingModelImpl implements FlatShadingModel {
 			}
 		}
 		return translucency;
+	}
+
+	protected double getDarknessFactorByDepth(Point3D surfacePositionInCamera, Scene scene) {
+		double darkness = 0;
+		DepthFunction df = scene.getRenderParameters().getDarknessDepthFunction();
+		if (df != null) {
+			double depth = -surfacePositionInCamera.getZ();
+			darkness = Math.max(Math.min(df.eval(depth), 1.0), 0);
+		}
+		return darkness;
 	}
 
 	public double getLightReflectionFactor() {
