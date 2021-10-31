@@ -126,6 +126,25 @@ public class ModelBuilderUtils {
 		return new PolygonalObject3D(vertices);
 	}
 
+	public static BaseObject3D buildRing(double innerRadius, double outerRadius, double depth, int vertexCount,
+			Color color, FlatShadingModel shadingModel) {
+		MultipartObject3D<BaseObject3D> ring = new MultipartObject3D<BaseObject3D>();
+		// Edges
+		PolygonalObject3D outerRingBack = buildCircularShapeXY(outerRadius, vertexCount);
+		PolygonalObject3D outerRingFront = (PolygonalObject3D) cloneShape(outerRingBack).translateZ(depth);
+		PolygonalObject3D innerRingBack = buildCircularShapeXY(innerRadius, vertexCount);
+		PolygonalObject3D innerRingFront = (PolygonalObject3D) cloneShape(innerRingBack).translateZ(depth);
+		// Outer hull
+		ring.addPart(buildLayeredObject(outerRingBack, outerRingFront, false, false, color, shadingModel));
+		// Inner hull
+		ring.addPart(buildLayeredObject(innerRingBack, innerRingFront, false, false, color, shadingModel));
+		// Back side
+		ring.addPart(buildLayeredObject(outerRingBack, innerRingBack, false, false, color, shadingModel));
+		// Front side
+		ring.addPart(buildLayeredObject(outerRingFront, innerRingFront, false, false, color, shadingModel));
+		return ring;
+	}
+
 	public static BaseObject3D buildSphere(double radius, int vertexCount, Color color, FlatShadingModel shadingModel) {
 		double e = 0.005;
 		int nlayers = vertexCount / 2;
@@ -136,7 +155,7 @@ public class ModelBuilderUtils {
 			PolygonalObject3D polygon = (PolygonalObject3D) buildCircularShapeXY(r, vertexCount).translateZ(z);
 			layers.add(polygon);
 		}
-		return buildLayeredObject(layers, false, color, shadingModel);
+		return buildLayeredObject(layers, true, false, color, shadingModel);
 	}
 
 	public static PolygonalObject3D buildCircularShapeXY(double radius, int vertexCount) {
@@ -178,10 +197,8 @@ public class ModelBuilderUtils {
 
 	public static BaseObject3D buildSlantedExtrusion(PolygonalObject3D shapeXY, double depth, double xOffset,
 			double yOffset, Color color, FlatShadingModel shadingModel) {
-		List<PolygonalObject3D> layers = new Vector<PolygonalObject3D>(2);
-		layers.add(shapeXY);
-		layers.add((PolygonalObject3D) cloneShape(shapeXY).translate(xOffset, yOffset, depth));
-		return buildLayeredObject(layers, false, color, shadingModel);
+		PolygonalObject3D slantedShapeXY = (PolygonalObject3D) cloneShape(shapeXY).translate(xOffset, yOffset, depth);
+		return buildLayeredObject(shapeXY, slantedShapeXY, true, false, color, shadingModel);
 	}
 
 	public static BaseObject3D buildExtrusionAlongPath(PolygonalObject3D shapeXY, List<Point3D> path, Color color,
@@ -206,7 +223,7 @@ public class ModelBuilderUtils {
 			layers.add((PolygonalObject3D) cloneShape(shapeXY).rotateY(Math.PI / 2).rotateZ(lat).rotateY(-lon)
 					.translate(p.getX(), p.getY(), p.getZ()));
 		}
-		return buildLayeredObject(layers, true, color, shadingModel);
+		return buildLayeredObject(layers, true, true, color, shadingModel);
 	}
 
 	public static BaseObject3D buildExtrusionWithRoundedSides(PolygonalObject3D shapeXY, double roundnessFactor,
@@ -229,16 +246,26 @@ public class ModelBuilderUtils {
 			double scale = 1.0 - 2 * r * (1.0 - Math.sin(angle));
 			layers.add((PolygonalObject3D) cloneShape(shapeXY).scale(scale).translateZ(z));
 		}
-		return buildLayeredObject(layers, false, color, shadingModel);
+		return buildLayeredObject(layers, true, false, color, shadingModel);
 	}
 
-	public static BaseObject3D buildLayeredObject(List<PolygonalObject3D> layers, boolean triangularFaces, Color color,
-			FlatShadingModel shadingModel) {
+	public static BaseObject3D buildLayeredObject(PolygonalObject3D oneLayer, PolygonalObject3D otherLayer,
+			boolean fillSides, boolean triangularFaces, Color color, FlatShadingModel shadingModel) {
+		List<PolygonalObject3D> layers = new Vector<PolygonalObject3D>(2);
+		layers.add(oneLayer);
+		layers.add(otherLayer);
+		return buildLayeredObject(layers, fillSides, triangularFaces, color, shadingModel);
+	}
+
+	public static BaseObject3D buildLayeredObject(List<PolygonalObject3D> layers, boolean fillSides,
+			boolean triangularFaces, Color color, FlatShadingModel shadingModel) {
 		MultipartObject3D<SimpleFace3D> object = new MultipartObject3D<SimpleFace3D>();
 		int lc = layers.size();
 		// Sides
-		object.addPart(convertToFace(layers.get(0), color, shadingModel));
-		object.addPart(convertToFace(layers.get(lc - 1), color, shadingModel));
+		if (fillSides) {
+			object.addPart(convertToFace(layers.get(0), color, shadingModel));
+			object.addPart(convertToFace(layers.get(lc - 1), color, shadingModel));
+		}
 		// Surface
 		for (int li = 0; li < lc - 1; li++) {
 			List<Point3D> verticesP = layers.get(li).getVerticesInWorldCoordinates();
