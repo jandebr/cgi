@@ -126,6 +126,32 @@ public class ModelBuilderUtils {
 		return new PolygonalObject3D(vertices);
 	}
 
+	public static BaseObject3D buildCylinder(double radius, double depth, int vertexCount, Color color,
+			FlatShadingModel shadingModel) {
+		PolygonalObject3D base = buildCircularShapeXY(radius, vertexCount);
+		return buildExtrusion(base, depth, color, shadingModel);
+	}
+
+	public static BaseObject3D buildPyramid(double radius, double depth, int vertexCount, Color color,
+			FlatShadingModel shadingModel, boolean fillBase) {
+		MultipartObject3D<SimpleFace3D> pyramid = new MultipartObject3D<SimpleFace3D>();
+		// Base
+		PolygonalObject3D base = buildCircularShapeXY(radius, vertexCount);
+		if (fillBase) {
+			pyramid.addPart(convertToFace(base, color, shadingModel));
+		}
+		// Hull
+		List<Point3D> vertices = base.getVerticesInWorldCoordinates();
+		Point3D top = new Point3D(0, 0, depth);
+		int n = vertices.size();
+		for (int i = 0; i < n; i++) {
+			Point3D p0 = vertices.get(i);
+			Point3D p1 = vertices.get((i + 1) % n);
+			pyramid.addPart(new SimpleFace3D(color, shadingModel, p0, p1, top));
+		}
+		return pyramid;
+	}
+
 	public static BaseObject3D buildRing(double innerRadius, double outerRadius, double depth, int vertexCount,
 			Color color, FlatShadingModel shadingModel) {
 		MultipartObject3D<BaseObject3D> ring = new MultipartObject3D<BaseObject3D>();
