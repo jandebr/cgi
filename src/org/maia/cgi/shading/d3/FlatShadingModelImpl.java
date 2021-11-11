@@ -80,7 +80,7 @@ public class FlatShadingModelImpl implements FlatShadingModel {
 				if (scene.getRenderParameters().isShadowsEnabled()) {
 					brightness *= getLightTranslucency(ray, object, scene);
 				} else {
-					brightness *= 0.5; // compensate unrealistic over-lighting of a scene in the absence of shadows
+					brightness *= 0.7; // compensate unrealistic over-lighting of a scene in the absence of shadows
 				}
 				if (brightness > 0) {
 					Vector3D normal = object.getPlaneInCameraCoordinates(scene.getCamera()).getNormalUnitVector();
