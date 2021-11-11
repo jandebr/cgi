@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Vector;
 
 import org.maia.cgi.compose.Compositing;
@@ -62,74 +63,33 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 		}
 	}
 
-	private void renderRaster(RenderState state, Collection<ViewPort> outputs) {
-		int pw = getPixelWidth();
-		int ph = getPixelHeight();
-		double vw = state.getViewPlaneBounds().getWidth();
-		double vh = state.getViewPlaneBounds().getHeight();
-		double vz = state.getViewPlaneZ();
-		double vx0 = state.getViewPlaneBounds().getLeft();
-		double vy0 = state.getViewPlaneBounds().getBottom();
-		for (int iy = 0; iy < ph; iy++) {
-			double vy = vy0 + (ph - iy - 0.5) / ph * vh;
-			for (int ix = 0; ix < pw; ix++) {
-				double vx = vx0 + (ix + 0.5) / pw * vw;
-				Point3D viewPoint = new Point3D(vx, vy, vz);
-				renderPixel(ix, iy, viewPoint, state, outputs);
-			}
-			fireRenderingProgressUpdate(state.getScene(), state.getCurrentStep(), (iy + 1.0) / ph,
-					state.getTotalSteps());
+	private synchronized void renderRaster(RenderState state, Collection<ViewPort> outputs) {
+		ThreadGroup workers = new ThreadGroup("Raytrace workers");
+		int n = state.getScene().getRenderParameters().getSafeNumberOfRenderThreads();
+		System.out.println("Spawning " + n + " raytrace worker" + (n > 1 ? "s" : ""));
+		for (int i = 0; i < n; i++) {
+			Thread t = new Thread(workers, new RenderRasterWorker(state, outputs), "Raytrace worker #" + i);
+			t.setDaemon(true);
+			t.start();
+			state.setActiveRenderRasterWorkers(state.getActiveRenderRasterWorkers() + 1);
 		}
-	}
-
-	private void renderPixel(int ix, int iy, Point3D viewPoint, RenderState state, Collection<ViewPort> outputs) {
-		if (getSamplesPerPixel() == 1) {
-			renderPixelWithoutSupersampling(ix, iy, viewPoint, state, outputs);
-		} else {
-			renderPixelBySupersampling(ix, iy, viewPoint, state, outputs);
-		}
-	}
-
-	private void renderPixelWithoutSupersampling(int ix, int iy, Point3D viewPoint, RenderState state,
-			Collection<ViewPort> outputs) {
-		ColorDepthBuffer raster = state.getRaster();
-		LineSegment3D ray = new LineSegment3D(viewPoint, viewPoint.plus(viewPoint.minus(Point3D.origin())), true, false);
-		Collection<ObjectSurfacePoint3D> intersections = state.getSceneIntersectionsWithRay(ray, ix, iy);
-		if (!intersections.isEmpty()) {
-			state.sortIntersectionsByDepth();
-			raster.setColorAndDepth(ix, iy, state.getCombinedColor(), state.getNearestDepth());
-		}
-		renderPixelAtViewPorts(ix, iy, raster.getColor(ix, iy), outputs);
-	}
-
-	private void renderPixelBySupersampling(int ix, int iy, Point3D viewPoint, RenderState state,
-			Collection<ViewPort> outputs) {
-		ColorDepthBuffer raster = state.getRaster();
-		int sppx = getSamplesPerPixelX();
-		int sppy = getSamplesPerPixelY();
-		double pvw = state.getViewPlaneBounds().getWidth() / getPixelWidth(); // pixel view width
-		double pvh = state.getViewPlaneBounds().getHeight() / getPixelHeight(); // pixel view height
-		for (int si = 0; si < sppy; si++) {
-			int iry = iy * sppy + si;
-			double vsy = viewPoint.getY() + pvh / 2 - (si + 0.5) / sppy * pvh;
-			for (int sj = 0; sj < sppx; sj++) {
-				int irx = ix * sppx + sj;
-				double vsx = viewPoint.getX() - pvw / 2 + (sj + 0.5) / sppx * pvw;
-				Point3D samplePoint = new Point3D(vsx, vsy, viewPoint.getZ());
-				LineSegment3D ray = new LineSegment3D(samplePoint,
-						samplePoint.plus(samplePoint.minus(Point3D.origin())), true, false);
-				Collection<ObjectSurfacePoint3D> intersections = state.getSceneIntersectionsWithRay(ray, ix, iy);
-				if (!intersections.isEmpty()) {
-					state.sortIntersectionsByDepth();
-					raster.setColorAndDepth(irx, iry, state.getCombinedColor(), state.getNearestDepth());
-				}
+		while (state.getActiveRenderRasterWorkers() > 0) {
+			try {
+				wait();
+			} catch (InterruptedException e) {
+				// do nothing
 			}
 		}
-		renderPixelAtViewPorts(ix, iy,
-				raster.convoluteColor(ix * sppx, iy * sppy, state.getPixelAveragingConvolutionMatrix()), outputs);
+	}
+
+	private synchronized void notifyRenderRasterWorkerCompletion(RenderRasterWorker worker) {
+		RenderState state = worker.getState();
+		state.setActiveRenderRasterWorkers(state.getActiveRenderRasterWorkers() - 1);
+		notifyAll();
 	}
 
 	private void applyDepthBlur(RenderState state, Collection<ViewPort> outputs) {
+		// Blur by depth
 		ColorDepthBuffer raster = state.getRaster();
 		int sppx = getSamplesPerPixelX();
 		int sppy = getSamplesPerPixelY();
@@ -215,10 +175,6 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 
 		private double viewPlaneZ;
 
-		private List<ObjectSurfacePoint3D> intersections; // reusable
-
-		private List<Color> colorList; // reusable
-
 		private ColorDepthBuffer raster;
 
 		private ConvolutionMatrix pixelAveragingConvolutionMatrix;
@@ -229,24 +185,26 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 
 		private int totalSteps;
 
+		private int nextRenderLineIndex;
+
+		private int activeRenderRasterWorkers;
+
 		public RenderState(Scene scene) {
-			RaytraceRenderer renderer = RaytraceRenderer.this;
 			ViewVolume vv = scene.getCamera().getViewVolume();
 			this.scene = scene;
 			this.viewPlaneBounds = vv.getViewPlaneRectangle();
 			this.viewPlaneZ = vv.getViewPlaneZ();
-			this.intersections = new Vector<ObjectSurfacePoint3D>();
-			this.colorList = new Vector<Color>();
-			this.raster = new ColorDepthBuffer(renderer.getPixelWidth() * renderer.getSamplesPerPixelX(),
-					renderer.getPixelHeight() * renderer.getSamplesPerPixelY(), scene.getRenderParameters()
-							.getAmbientColor());
-			this.pixelAveragingConvolutionMatrix = Convolution.getScaledGaussianBlurMatrix(
-					renderer.getSamplesPerPixelY(), renderer.getSamplesPerPixelX(), 2.0);
-			int xBins = (int) Math.ceil(renderer.getPixelWidth() * renderer.getSamplesPerPixelX() / 24);
-			int yBins = (int) Math.ceil(renderer.getPixelHeight() * renderer.getSamplesPerPixelY() / 24);
+			this.raster = new ColorDepthBuffer(getPixelWidth() * getSamplesPerPixelX(), getPixelHeight()
+					* getSamplesPerPixelY(), scene.getRenderParameters().getAmbientColor());
+			this.pixelAveragingConvolutionMatrix = Convolution.getScaledGaussianBlurMatrix(getSamplesPerPixelY(),
+					getSamplesPerPixelX(), 2.0);
+			int xBins = (int) Math.ceil(getPixelWidth() * getSamplesPerPixelX() / 24);
+			int yBins = (int) Math.ceil(getPixelHeight() * getSamplesPerPixelY() / 24);
 			this.objectIndex = new RaytraceableObjectViewPlaneIndex(scene.getCamera(), xBins, yBins);
 			this.currentStep = 0;
 			this.totalSteps = getDepthBlurParams() == null ? 1 : 3;
+			this.nextRenderLineIndex = 0;
+			this.activeRenderRasterWorkers = 0;
 			init();
 		}
 
@@ -285,68 +243,20 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 			return sb.toString();
 		}
 
-		public Collection<ObjectSurfacePoint3D> getSceneIntersectionsWithRay(LineSegment3D ray, int ix, int iy) {
-			Collection<ObjectSurfacePoint3D> intersections = getIntersections();
-			intersections.clear();
-			// From scene objects
-			Point3D pointOnViewPlane = ray.getP1();
-			Collection<RaytraceableObject3D> objects = getObjectIndex().getObjects(pointOnViewPlane.getX(),
-					pointOnViewPlane.getY());
-			if (objects != null) {
-				for (RaytraceableObject3D object : objects) {
-					object.intersectWithRay(ray, getScene(), intersections, true);
-				}
-			}
-			// From backdrop, if any
-			ColorDepthBuffer backDrop = getScene().getBackdrop();
-			if (backDrop != null && getScene().getRenderParameters().isBackdropEnabled()) {
-				Color color = backDrop.getColor(ix, iy);
-				double depth = backDrop.getDepth(ix, iy);
-				double z = -depth;
-				double zf = z / pointOnViewPlane.getZ();
-				if (zf >= 1.0) {
-					double x = pointOnViewPlane.getX() * zf;
-					double y = pointOnViewPlane.getY() * zf;
-					intersections.add(new ObjectSurfacePoint3DImpl(null, new Point3D(x, y, z), color));
-				}
-			}
-			return intersections;
-		}
-
-		public void sortIntersectionsByDepth() {
-			List<ObjectSurfacePoint3D> intersections = getIntersections();
-			if (intersections.size() > 1) {
-				Collections.sort(intersections, SurfacePointSorterByDepth.instance);
-			}
-		}
-
-		public Color getCombinedColor() {
-			Color color = null;
-			List<ObjectSurfacePoint3D> intersections = getIntersections();
-			if (intersections.size() == 1) {
-				color = intersections.get(0).getColor();
-			} else if (intersections.size() > 1) {
-				List<Color> colors = getColorList();
-				colors.clear();
-				for (ObjectSurfacePoint3D intersection : intersections) {
-					colors.add(intersection.getColor());
-				}
-				color = Compositing.combineColorsByTransparency(colors);
-			}
-			return color;
-		}
-
-		public double getNearestDepth() {
-			double depth = 0;
-			List<ObjectSurfacePoint3D> intersections = getIntersections();
-			if (!intersections.isEmpty()) {
-				depth = -intersections.get(0).getPositionInCamera().getZ();
-			}
-			return depth;
-		}
-
 		public void incrementStep() {
 			currentStep++;
+		}
+
+		public synchronized boolean hasNextRenderLine() {
+			return getNextRenderLineIndex() < getPixelHeight();
+		}
+
+		public synchronized int nextRenderLine() {
+			if (!hasNextRenderLine())
+				throw new NoSuchElementException("All lines were rendered");
+			int index = getNextRenderLineIndex();
+			setNextRenderLineIndex(index + 1);
+			return index;
 		}
 
 		public Scene getScene() {
@@ -359,14 +269,6 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 
 		public double getViewPlaneZ() {
 			return viewPlaneZ;
-		}
-
-		private List<ObjectSurfacePoint3D> getIntersections() {
-			return intersections;
-		}
-
-		public List<Color> getColorList() {
-			return colorList;
 		}
 
 		public ColorDepthBuffer getRaster() {
@@ -387,6 +289,196 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 
 		public int getTotalSteps() {
 			return totalSteps;
+		}
+
+		public double getRasterRenderProgress() {
+			return getNextRenderLineIndex() / (double) getPixelHeight();
+		}
+
+		private int getNextRenderLineIndex() {
+			return nextRenderLineIndex;
+		}
+
+		private void setNextRenderLineIndex(int nextRenderLineIndex) {
+			this.nextRenderLineIndex = nextRenderLineIndex;
+		}
+
+		public int getActiveRenderRasterWorkers() {
+			return activeRenderRasterWorkers;
+		}
+
+		public void setActiveRenderRasterWorkers(int activeRenderRasterWorkers) {
+			this.activeRenderRasterWorkers = activeRenderRasterWorkers;
+		}
+
+	}
+
+	private class RenderRasterWorker implements Runnable {
+
+		private RenderState state;
+
+		private Collection<ViewPort> outputs;
+
+		private List<ObjectSurfacePoint3D> intersections; // reusable
+
+		private List<Color> colorList; // reusable
+
+		public RenderRasterWorker(RenderState state, Collection<ViewPort> outputs) {
+			this.state = state;
+			this.outputs = outputs;
+			this.intersections = new Vector<ObjectSurfacePoint3D>();
+			this.colorList = new Vector<Color>();
+		}
+
+		@Override
+		public void run() {
+			RenderState state = getState();
+			int pw = getPixelWidth();
+			int ph = getPixelHeight();
+			double vw = state.getViewPlaneBounds().getWidth();
+			double vh = state.getViewPlaneBounds().getHeight();
+			double vz = state.getViewPlaneZ();
+			double vx0 = state.getViewPlaneBounds().getLeft();
+			double vy0 = state.getViewPlaneBounds().getBottom();
+			while (state.hasNextRenderLine()) {
+				int iy = state.nextRenderLine();
+				double vy = vy0 + (ph - iy - 0.5) / ph * vh;
+				for (int ix = 0; ix < pw; ix++) {
+					double vx = vx0 + (ix + 0.5) / pw * vw;
+					Point3D viewPoint = new Point3D(vx, vy, vz);
+					renderPixel(ix, iy, viewPoint);
+				}
+				fireRenderingProgressUpdate(state.getScene(), state.getCurrentStep(), state.getRasterRenderProgress(),
+						state.getTotalSteps());
+			}
+			notifyRenderRasterWorkerCompletion(this);
+		}
+
+		private void renderPixel(int ix, int iy, Point3D viewPoint) {
+			if (getSamplesPerPixel() == 1) {
+				renderPixelWithoutSupersampling(ix, iy, viewPoint);
+			} else {
+				renderPixelBySupersampling(ix, iy, viewPoint);
+			}
+		}
+
+		private void renderPixelWithoutSupersampling(int ix, int iy, Point3D viewPoint) {
+			RenderState state = getState();
+			ColorDepthBuffer raster = state.getRaster();
+			LineSegment3D ray = new LineSegment3D(viewPoint, viewPoint.plus(viewPoint.minus(Point3D.origin())), true,
+					false);
+			Collection<ObjectSurfacePoint3D> intersections = getSceneIntersectionsWithRay(ray, ix, iy);
+			if (!intersections.isEmpty()) {
+				sortIntersectionsByDepth();
+				raster.setColorAndDepth(ix, iy, getCombinedColor(), getNearestDepth());
+			}
+			renderPixelAtViewPorts(ix, iy, raster.getColor(ix, iy), getOutputs());
+		}
+
+		private void renderPixelBySupersampling(int ix, int iy, Point3D viewPoint) {
+			RenderState state = getState();
+			ColorDepthBuffer raster = state.getRaster();
+			int sppx = getSamplesPerPixelX();
+			int sppy = getSamplesPerPixelY();
+			double pvw = state.getViewPlaneBounds().getWidth() / getPixelWidth(); // pixel view width
+			double pvh = state.getViewPlaneBounds().getHeight() / getPixelHeight(); // pixel view height
+			for (int si = 0; si < sppy; si++) {
+				int iry = iy * sppy + si;
+				double vsy = viewPoint.getY() + pvh / 2 - (si + 0.5) / sppy * pvh;
+				for (int sj = 0; sj < sppx; sj++) {
+					int irx = ix * sppx + sj;
+					double vsx = viewPoint.getX() - pvw / 2 + (sj + 0.5) / sppx * pvw;
+					Point3D samplePoint = new Point3D(vsx, vsy, viewPoint.getZ());
+					LineSegment3D ray = new LineSegment3D(samplePoint, samplePoint.plus(samplePoint.minus(Point3D
+							.origin())), true, false);
+					Collection<ObjectSurfacePoint3D> intersections = getSceneIntersectionsWithRay(ray, ix, iy);
+					if (!intersections.isEmpty()) {
+						sortIntersectionsByDepth();
+						raster.setColorAndDepth(irx, iry, getCombinedColor(), getNearestDepth());
+					}
+				}
+			}
+			renderPixelAtViewPorts(ix, iy,
+					raster.convoluteColor(ix * sppx, iy * sppy, state.getPixelAveragingConvolutionMatrix()),
+					getOutputs());
+		}
+
+		private Collection<ObjectSurfacePoint3D> getSceneIntersectionsWithRay(LineSegment3D ray, int ix, int iy) {
+			Collection<ObjectSurfacePoint3D> intersections = getIntersections();
+			intersections.clear();
+			// From scene objects
+			RenderState state = getState();
+			Scene scene = state.getScene();
+			Point3D pointOnViewPlane = ray.getP1();
+			Collection<RaytraceableObject3D> objects = state.getObjectIndex().getObjects(pointOnViewPlane.getX(),
+					pointOnViewPlane.getY());
+			if (objects != null) {
+				for (RaytraceableObject3D object : objects) {
+					object.intersectWithRay(ray, scene, intersections, true);
+				}
+			}
+			// From backdrop, if any
+			ColorDepthBuffer backDrop = scene.getBackdrop();
+			if (backDrop != null && scene.getRenderParameters().isBackdropEnabled()) {
+				Color color = backDrop.getColor(ix, iy);
+				double depth = backDrop.getDepth(ix, iy);
+				double z = -depth;
+				double zf = z / pointOnViewPlane.getZ();
+				if (zf >= 1.0) {
+					double x = pointOnViewPlane.getX() * zf;
+					double y = pointOnViewPlane.getY() * zf;
+					intersections.add(new ObjectSurfacePoint3DImpl(null, new Point3D(x, y, z), color));
+				}
+			}
+			return intersections;
+		}
+
+		private void sortIntersectionsByDepth() {
+			List<ObjectSurfacePoint3D> intersections = getIntersections();
+			if (intersections.size() > 1) {
+				Collections.sort(intersections, SurfacePointSorterByDepth.instance);
+			}
+		}
+
+		private Color getCombinedColor() {
+			Color color = null;
+			List<ObjectSurfacePoint3D> intersections = getIntersections();
+			if (intersections.size() == 1) {
+				color = intersections.get(0).getColor();
+			} else if (intersections.size() > 1) {
+				List<Color> colors = getColorList();
+				colors.clear();
+				for (ObjectSurfacePoint3D intersection : intersections) {
+					colors.add(intersection.getColor());
+				}
+				color = Compositing.combineColorsByTransparency(colors);
+			}
+			return color;
+		}
+
+		private double getNearestDepth() {
+			double depth = 0;
+			List<ObjectSurfacePoint3D> intersections = getIntersections();
+			if (!intersections.isEmpty()) {
+				depth = -intersections.get(0).getPositionInCamera().getZ();
+			}
+			return depth;
+		}
+
+		private RenderState getState() {
+			return state;
+		}
+
+		private Collection<ViewPort> getOutputs() {
+			return outputs;
+		}
+
+		private List<ObjectSurfacePoint3D> getIntersections() {
+			return intersections;
+		}
+
+		private List<Color> getColorList() {
+			return colorList;
 		}
 
 	}

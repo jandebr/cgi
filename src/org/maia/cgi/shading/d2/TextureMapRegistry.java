@@ -36,7 +36,7 @@ public class TextureMapRegistry {
 		}
 	}
 
-	public void clear() {
+	public synchronized void clear() {
 		for (TextureMapHandle handle : getTextureMaps().keySet()) {
 			handle.dispose();
 		}
@@ -44,7 +44,7 @@ public class TextureMapRegistry {
 		getLruList().clear();
 	}
 
-	public TextureMap getTextureMap(TextureMapHandle handle) {
+	public synchronized TextureMap getTextureMap(TextureMapHandle handle) {
 		TextureMap textureMap = getTextureMaps().get(handle);
 		if (textureMap == null) {
 			if (getSize() == getCapacity()) {
@@ -58,7 +58,7 @@ public class TextureMapRegistry {
 		return textureMap;
 	}
 
-	public void setCapacity(int capacity) {
+	public synchronized void setCapacity(int capacity) {
 		while (getSize() > capacity) {
 			removeLru();
 		}
@@ -73,11 +73,11 @@ public class TextureMapRegistry {
 		}
 	}
 
-	public int getSize() {
+	public synchronized int getSize() {
 		return getLruList().size();
 	}
 
-	public int getCapacity() {
+	public synchronized int getCapacity() {
 		return capacity;
 	}
 

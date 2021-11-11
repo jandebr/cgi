@@ -61,7 +61,7 @@ public abstract class GraphicsViewPort implements ViewPort {
 	}
 
 	@Override
-	public void clear() {
+	public synchronized void clear() {
 		int width = (int) Math.floor(getWindowBounds().getWidth());
 		int height = (int) Math.floor(getWindowBounds().getHeight());
 		getWindowGraphics2D().clearRect(0, 0, width, height);

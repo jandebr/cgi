@@ -17,6 +17,8 @@ public class SceneRenderParameters {
 
 	private Color ambientColor;
 
+	private int numberOfRenderThreads;
+
 	public SceneRenderParameters() {
 	}
 
@@ -58,6 +60,19 @@ public class SceneRenderParameters {
 
 	public void setAmbientColor(Color ambientColor) {
 		this.ambientColor = ambientColor;
+	}
+
+	public int getSafeNumberOfRenderThreads() {
+		int cores = Runtime.getRuntime().availableProcessors();
+		return Math.max(Math.min(getNumberOfRenderThreads(), cores), 1);
+	}
+
+	public int getNumberOfRenderThreads() {
+		return numberOfRenderThreads;
+	}
+
+	public void setNumberOfRenderThreads(int numberOfRenderThreads) {
+		this.numberOfRenderThreads = numberOfRenderThreads;
 	}
 
 }

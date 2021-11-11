@@ -18,6 +18,8 @@ import org.maia.cgi.render.d3.view.ColorDepthBuffer;
 
 public abstract class SceneBuilder {
 
+	public static final String PROPERTY_RENDER_THREADS = "renderThreads";
+
 	protected SceneBuilder() {
 	}
 
@@ -61,6 +63,7 @@ public abstract class SceneBuilder {
 		parameters.setBackdropEnabled(options.isBackdropEnabled());
 		parameters.setDarknessDepthFunction(createDarknessDepthFunction(scene, options));
 		parameters.setDepthBlurParameters(createDepthBlurParameters(scene, options));
+		parameters.setNumberOfRenderThreads(Integer.parseInt(System.getProperty(PROPERTY_RENDER_THREADS, "1")));
 	}
 
 	protected DepthFunction createDarknessDepthFunction(Scene scene, RenderOptions options) {

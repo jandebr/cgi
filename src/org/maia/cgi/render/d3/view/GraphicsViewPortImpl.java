@@ -16,7 +16,7 @@ public class GraphicsViewPortImpl extends GraphicsViewPort {
 	}
 
 	@Override
-	public void drawLineInViewCoordinates(double x1, double y1, double depth1, Color color1, double x2, double y2,
+	public synchronized void drawLineInViewCoordinates(double x1, double y1, double depth1, Color color1, double x2, double y2,
 			double depth2, Color color2) {
 		Graphics2D g = getViewGraphics2D();
 		g.setColor(depth1 < depth2 ? color1 : color2);
@@ -25,7 +25,7 @@ public class GraphicsViewPortImpl extends GraphicsViewPort {
 	}
 
 	@Override
-	public void paintPixelInWindowCoordinates(int xPixel, int yPixel, Color color) {
+	public synchronized void paintPixelInWindowCoordinates(int xPixel, int yPixel, Color color) {
 		Graphics2D g = getWindowGraphics2D();
 		g.setColor(color);
 		g.drawLine(xPixel, yPixel, xPixel, yPixel);

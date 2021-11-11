@@ -40,9 +40,9 @@ public class SceneSpatialIndex {
 
 	private Box3D firstBinBoundingBox;
 
-	private List<ObjectSurfacePoint3D> reusableIntersectionsList;
+	private ThreadLocal<List<ObjectSurfacePoint3D>> reusableIntersectionsList;
 
-	private Set<Object3D> reusableObjectsSet;
+	private ThreadLocal<Set<Object3D>> reusableObjectsSet;
 
 	private SceneSpatialIndex(Scene scene, int xBins, int yBins, int zBins) {
 		this.scene = scene;
@@ -50,8 +50,8 @@ public class SceneSpatialIndex {
 		this.yBins = yBins;
 		this.zBins = zBins;
 		this.index = new HashMap<SpatialBin, Collection<Object3D>>(xBins * yBins);
-		this.reusableIntersectionsList = new Vector<ObjectSurfacePoint3D>();
-		this.reusableObjectsSet = new HashSet<Object3D>(100);
+		this.reusableIntersectionsList = new ThreadLocal<List<ObjectSurfacePoint3D>>();
+		this.reusableObjectsSet = new ThreadLocal<Set<Object3D>>();
 	}
 
 	public static SceneSpatialIndex createIndex(Scene scene) {
@@ -220,11 +220,21 @@ public class SceneSpatialIndex {
 	}
 
 	private List<ObjectSurfacePoint3D> getReusableIntersectionsList() {
-		return reusableIntersectionsList;
+		List<ObjectSurfacePoint3D> list = reusableIntersectionsList.get();
+		if (list == null) {
+			list = new Vector<ObjectSurfacePoint3D>();
+			reusableIntersectionsList.set(list);
+		}
+		return list;
 	}
 
 	private Set<Object3D> getReusableObjectsSet() {
-		return reusableObjectsSet;
+		Set<Object3D> set = reusableObjectsSet.get();
+		if (set == null) {
+			set = new HashSet<Object3D>(300);
+			reusableObjectsSet.set(set);
+		}
+		return set;
 	}
 
 	private static class SpatialBin {
