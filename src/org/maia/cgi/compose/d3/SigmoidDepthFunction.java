@@ -17,7 +17,7 @@ public class SigmoidDepthFunction implements DepthFunction {
 	 *            The depth value for which the projected value is 1 : <code>function(farDepth) = 1</code>
 	 * @param relativeInflectionDepth
 	 *            A value between 0 and 1 representing the relative distance between <code>nearDepth</code> (as 0) and
-	 *            <code>farDepth</code> (as 1) where the function inflects. More accurately, where the first derivative
+	 *            <code>farDepth</code> (as 1) where the function inflects. More accurately, where the second derivative
 	 *            of the continuously increasing Sigmoid function is 0
 	 * @param smoothness
 	 *            A strictly positive number (&gt; 0) that controls the smoothness of the Sigmoid function. A larger
@@ -41,7 +41,7 @@ public class SigmoidDepthFunction implements DepthFunction {
 
 	@Override
 	public double eval(double depth) {
-		return getFunction().eval(depth);
+		return Math.max(Math.min(getFunction().eval(depth), 1.0), 0);
 	}
 
 	private SigmoidFunction getFunction() {
