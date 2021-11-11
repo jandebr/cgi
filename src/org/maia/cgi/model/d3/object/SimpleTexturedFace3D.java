@@ -125,25 +125,39 @@ public class SimpleTexturedFace3D extends SimpleFace3D {
 		}
 	}
 
-	protected void applyLuminance(ObjectSurfacePoint3D surfacePoint, Scene scene) {
+	private void applyLuminance(ObjectSurfacePoint3D surfacePoint, Scene scene) {
+		double luminance = sampleLuminance(surfacePoint, scene);
+		if (!Double.isNaN(luminance)) {
+			surfacePoint.setColor(Compositing.adjustBrightness(surfacePoint.getColor(), luminance));
+		}
+	}
+
+	protected double sampleLuminance(ObjectSurfacePoint3D surfacePoint, Scene scene) {
 		TextureMap map = getLuminanceMap();
 		if (map != null) {
 			Point3D picturePosition = fromCameraToPictureCoordinates(surfacePoint.getPositionInCamera(),
 					scene.getCamera());
 			double luminance = map.sampleDouble(picturePosition.getX(), picturePosition.getZ());
-			double factor = luminance * 2.0 - 1.0;
-			surfacePoint.setColor(Compositing.adjustBrightness(surfacePoint.getColor(), factor));
+			return luminance * 2.0 - 1.0;
+		}
+		return Double.NaN;
+	}
+
+	private void applyTransparency(ObjectSurfacePoint3D surfacePoint, Scene scene) {
+		double transparency = sampleTransparency(surfacePoint, scene);
+		if (!Double.isNaN(transparency)) {
+			surfacePoint.setColor(Compositing.setTransparency(surfacePoint.getColor(), transparency));
 		}
 	}
 
-	protected void applyTransparency(ObjectSurfacePoint3D surfacePoint, Scene scene) {
+	protected double sampleTransparency(ObjectSurfacePoint3D surfacePoint, Scene scene) {
 		TextureMap map = getTransparencyMap();
 		if (map != null) {
 			Point3D picturePosition = fromCameraToPictureCoordinates(surfacePoint.getPositionInCamera(),
 					scene.getCamera());
-			double transparency = map.sampleDouble(picturePosition.getX(), picturePosition.getZ());
-			surfacePoint.setColor(Compositing.setTransparency(surfacePoint.getColor(), transparency));
+			return map.sampleDouble(picturePosition.getX(), picturePosition.getZ());
 		}
+		return Double.NaN;
 	}
 
 	protected Point3D fromCameraToPictureCoordinates(Point3D point, Camera camera) {
