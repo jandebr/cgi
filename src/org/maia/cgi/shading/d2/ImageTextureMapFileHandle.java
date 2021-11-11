@@ -8,15 +8,34 @@ public class ImageTextureMapFileHandle extends TextureMapHandle {
 
 	private String filePath;
 
+	private double scaleX;
+
+	private double scaleY;
+
 	public ImageTextureMapFileHandle(String filePath) {
+		this(filePath, 1.0);
+	}
+
+	public ImageTextureMapFileHandle(String filePath, double scale) {
+		this(filePath, scale, scale);
+	}
+
+	public ImageTextureMapFileHandle(String filePath, double scaleX, double scaleY) {
 		this.filePath = filePath;
+		this.scaleX = scaleX;
+		this.scaleY = scaleY;
 	}
 
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + getFilePath().hashCode();
+		result = prime * result + filePath.hashCode();
+		long temp;
+		temp = Double.doubleToLongBits(scaleX);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		temp = Double.doubleToLongBits(scaleY);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
 		return result;
 	}
 
@@ -29,7 +48,8 @@ public class ImageTextureMapFileHandle extends TextureMapHandle {
 		if (getClass() != obj.getClass())
 			return false;
 		ImageTextureMapFileHandle other = (ImageTextureMapFileHandle) obj;
-		return getFilePath().equals(other.getFilePath());
+		return getFilePath().equals(other.getFilePath()) && getScaleX() == other.getScaleX()
+				&& getScaleY() == other.getScaleY();
 	}
 
 	@Override
@@ -44,11 +64,23 @@ public class ImageTextureMapFileHandle extends TextureMapHandle {
 	}
 
 	protected BufferedImage readImageFromFile() {
-		return Compositing.readImageFromFile(getFilePath());
+		BufferedImage image = Compositing.readImageFromFile(getFilePath());
+		if (getScaleX() != 1.0 || getScaleY() != 1.0) {
+			image = Compositing.scaleImage(image, getScaleX(), getScaleY());
+		}
+		return image;
 	}
 
 	public String getFilePath() {
 		return filePath;
+	}
+
+	public double getScaleX() {
+		return scaleX;
+	}
+
+	public double getScaleY() {
+		return scaleY;
 	}
 
 }
