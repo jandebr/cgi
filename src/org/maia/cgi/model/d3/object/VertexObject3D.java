@@ -32,6 +32,7 @@ public abstract class VertexObject3D extends BaseObject3D implements MeshObject3
 
 	@Override
 	protected Box3D deriveBoundingBox(CoordinateFrame cframe, Camera camera) {
+		Metrics.getInstance().incrementBoundingBoxComputations();
 		Box3D bbox = null;
 		List<Point3D> vertices = getVertices(cframe, camera);
 		if (!vertices.isEmpty()) {
