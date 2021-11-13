@@ -71,7 +71,7 @@ public class FlatShadingModelImpl implements FlatShadingModel {
 	protected double getBrightnessFactor(LightSource lightSource, Point3D surfacePositionInCamera,
 			PolygonalObject3D object, Scene scene) {
 		double factor = -1.0;
-		double brightness = lightSource.getBrightness();
+		double brightness = lightSource.getBrightness() * getLightReflectionFactor();
 		if (lightSource instanceof AmbientLight) {
 			factor = brightness - 1.0;
 		} else {
