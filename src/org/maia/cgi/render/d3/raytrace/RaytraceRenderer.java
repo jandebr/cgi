@@ -202,8 +202,8 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 					* getSamplesPerPixelY(), scene.getRenderParameters().getAmbientColor());
 			this.pixelAveragingConvolutionMatrix = Convolution.getScaledGaussianBlurMatrix(getSamplesPerPixelY(),
 					getSamplesPerPixelX(), 2.0);
-			int xBins = Math.max((int) Math.ceil(getPixelWidth() * getSamplesPerPixelX() / 8), 500);
-			int yBins = Math.max((int) Math.ceil(getPixelHeight() * getSamplesPerPixelY() / 8), 500);
+			int xBins = Math.min((int) Math.ceil(getPixelWidth() * getSamplesPerPixelX() / 8), 500);
+			int yBins = Math.min((int) Math.ceil(getPixelHeight() * getSamplesPerPixelY() / 8), 500);
 			this.objectIndex = new RaytraceableObjectViewPlaneIndex(scene.getCamera(), xBins, yBins);
 			this.currentStep = 0;
 			this.totalSteps = getDepthBlurParams() == null ? 1 : 3;
