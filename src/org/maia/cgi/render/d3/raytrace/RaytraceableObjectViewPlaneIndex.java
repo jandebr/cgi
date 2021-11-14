@@ -39,6 +39,10 @@ public class RaytraceableObjectViewPlaneIndex {
 		this.index = new HashMap<SpatialBin, Collection<RaytraceableObject3D>>(xBins * yBins);
 	}
 
+	public BinStatistics getBinStatistics() {
+		return new BinStatistics();
+	}
+
 	public void addAllRaytraceableObjectsFromScene(Scene scene) {
 		for (RaytraceableObject3D object : SceneUtils.getAllRaytraceableObjectsInScene(scene)) {
 			addObject(object);
@@ -68,48 +72,6 @@ public class RaytraceableObjectViewPlaneIndex {
 			objects = getObjectsInBin(xBin, yBin);
 		}
 		return objects;
-	}
-
-	public int getMaximumObjectsPerBinRow() {
-		int max = 0;
-		Collection<RaytraceableObject3D> rowObjects = new HashSet<RaytraceableObject3D>(100);
-		for (int y = 0; y < getYbins(); y++) {
-			rowObjects.clear();
-			for (int x = 0; x < getXbins(); x++) {
-				Collection<RaytraceableObject3D> objects = getObjectsInBin(x, y);
-				if (objects != null) {
-					rowObjects.addAll(objects);
-				}
-			}
-			max = Math.max(max, rowObjects.size());
-		}
-		return max;
-	}
-
-	public int getMaximumObjectsPerBin() {
-		int max = 0;
-		for (int y = 0; y < getYbins(); y++) {
-			for (int x = 0; x < getXbins(); x++) {
-				Collection<RaytraceableObject3D> objects = getObjectsInBin(x, y);
-				if (objects != null) {
-					max = Math.max(max, objects.size());
-				}
-			}
-		}
-		return max;
-	}
-
-	public double getAverageObjectsPerBin() {
-		int sum = 0;
-		for (int y = 0; y < getYbins(); y++) {
-			for (int x = 0; x < getXbins(); x++) {
-				Collection<RaytraceableObject3D> objects = getObjectsInBin(x, y);
-				if (objects != null) {
-					sum += objects.size();
-				}
-			}
-		}
-		return (double) sum / (getYbins() * getXbins());
 	}
 
 	private Collection<RaytraceableObject3D> getObjectsInBin(int xBin, int yBin) {
@@ -255,6 +217,123 @@ public class RaytraceableObjectViewPlaneIndex {
 
 		public int getY() {
 			return y;
+		}
+
+	}
+
+	public class BinStatistics {
+
+		public BinStatistics() {
+		}
+
+		public int getMaximumObjectsPerBinRow() {
+			int max = 0;
+			Collection<RaytraceableObject3D> rowObjects = new HashSet<RaytraceableObject3D>(100);
+			for (int y = 0; y < getYbins(); y++) {
+				rowObjects.clear();
+				for (int x = 0; x < getXbins(); x++) {
+					Collection<RaytraceableObject3D> objects = getObjectsInBin(x, y);
+					if (objects != null) {
+						rowObjects.addAll(objects);
+					}
+				}
+				max = Math.max(max, rowObjects.size());
+			}
+			return max;
+		}
+
+		public int getMaximumObjectsPerBin() {
+			int max = 0;
+			for (int y = 0; y < getYbins(); y++) {
+				for (int x = 0; x < getXbins(); x++) {
+					Collection<RaytraceableObject3D> objects = getObjectsInBin(x, y);
+					if (objects != null) {
+						max = Math.max(max, objects.size());
+					}
+				}
+			}
+			return max;
+		}
+
+		public double getAverageObjectsPerBin() {
+			int sum = 0;
+			for (int y = 0; y < getYbins(); y++) {
+				for (int x = 0; x < getXbins(); x++) {
+					Collection<RaytraceableObject3D> objects = getObjectsInBin(x, y);
+					if (objects != null) {
+						sum += objects.size();
+					}
+				}
+			}
+			return (double) sum / (getYbins() * getXbins());
+		}
+
+		public ObjectsPerBinHistogram getObjectsPerBinHistogram(int classCount) {
+			int classRangeSize = (int) Math.ceil(getMaximumObjectsPerBin() / (double) classCount);
+			return new ObjectsPerBinHistogram(classCount, classRangeSize);
+		}
+
+	}
+
+	public class ObjectsPerBinHistogram {
+
+		private BinStatistics binStatistics;
+
+		private int classCount;
+
+		private int classRangeSize;
+
+		public ObjectsPerBinHistogram(int classCount, int classRangeSize) {
+			this.classCount = classCount;
+			this.classRangeSize = classRangeSize;
+		}
+
+		public String toCsvString() {
+			StringBuilder sb = new StringBuilder(getClassCount() * 8);
+			sb.append("objects,count\n");
+			int[] lowerBounds = getClassLowerBounds();
+			int[] values = getClassValues();
+			for (int i = 0; i < lowerBounds.length; i++) {
+				sb.append(lowerBounds[i] + "+");
+				sb.append(',');
+				sb.append(values[i]);
+				sb.append('\n');
+			}
+			return sb.toString();
+		}
+
+		public int[] getClassLowerBounds() {
+			int n = getClassCount();
+			int size = getClassRangeSize();
+			int[] lowerBounds = new int[n];
+			for (int i = 0; i < n; i++) {
+				lowerBounds[i] = i * size;
+			}
+			return lowerBounds;
+		}
+
+		public int[] getClassValues() {
+			int n = getClassCount();
+			int size = getClassRangeSize();
+			int[] values = new int[n];
+			for (int y = 0; y < getYbins(); y++) {
+				for (int x = 0; x < getXbins(); x++) {
+					Collection<RaytraceableObject3D> objects = getObjectsInBin(x, y);
+					if (objects != null) {
+						int ci = Math.min((int) Math.floor(objects.size() / (double) size), n - 1);
+						values[ci]++;
+					}
+				}
+			}
+			return values;
+		}
+
+		public int getClassCount() {
+			return classCount;
+		}
+
+		public int getClassRangeSize() {
+			return classRangeSize;
 		}
 
 	}

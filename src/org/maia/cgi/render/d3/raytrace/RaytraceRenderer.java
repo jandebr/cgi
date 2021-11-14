@@ -16,6 +16,7 @@ import org.maia.cgi.compose.d3.DepthBlurParameters;
 import org.maia.cgi.geometry.d2.Rectangle2D;
 import org.maia.cgi.geometry.d3.LineSegment3D;
 import org.maia.cgi.geometry.d3.Point3D;
+import org.maia.cgi.metrics.Metrics;
 import org.maia.cgi.model.d3.camera.ViewVolume;
 import org.maia.cgi.model.d3.object.ObjectSurfacePoint3D;
 import org.maia.cgi.model.d3.object.ObjectSurfacePoint3DImpl;
@@ -55,12 +56,14 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 	@Override
 	protected void renderImpl(Scene scene, Collection<ViewPort> outputs) {
 		RenderState state = new RenderState(scene);
+		System.out.println(state);
 		state.incrementStep();
 		renderRaster(state, outputs);
 		if (getDepthBlurParams() != null) {
 			state.incrementStep();
 			applyDepthBlur(state, outputs);
 		}
+		System.out.println(Metrics.getInstance());
 	}
 
 	private synchronized void renderRaster(RenderState state, Collection<ViewPort> outputs) {
@@ -210,7 +213,7 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 
 		private void init() {
 			getObjectIndex().addAllRaytraceableObjectsFromScene(getScene());
-			int n = getObjectIndex().getMaximumObjectsPerBinRow();
+			int n = getObjectIndex().getBinStatistics().getMaximumObjectsPerBinRow();
 			int c = TextureMapRegistry.getInstance().getCapacity();
 			if (c < n) {
 				System.err
@@ -221,6 +224,7 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 
 		@Override
 		public String toString() {
+			RaytraceableObjectViewPlaneIndex.BinStatistics objectIndexStats = getObjectIndex().getBinStatistics();
 			StringBuilder sb = new StringBuilder();
 			sb.append("RenderState {\n");
 			sb.append("\tView plane {\n");
@@ -234,10 +238,14 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 			sb.append("\t\tTop level objects: ").append(getScene().getTopLevelObjects().size()).append("\n");
 			sb.append("\t\tRaytraceable objects: ")
 					.append(SceneUtils.getAllRaytraceableObjectsInScene(getScene()).size()).append("\n");
-			sb.append("\t\tMaximum per spatial bin row: ").append(getObjectIndex().getMaximumObjectsPerBinRow())
+			sb.append("\t\tMaximum per spatial bin row: ").append(objectIndexStats.getMaximumObjectsPerBinRow())
 					.append("\n");
-			sb.append("\t\tMaximum per spatial bin: ").append(getObjectIndex().getMaximumObjectsPerBin()).append("\n");
-			sb.append("\t\tAverage per spatial bin: ").append(getObjectIndex().getAverageObjectsPerBin()).append("\n");
+			sb.append("\t\tMaximum per spatial bin: ").append(objectIndexStats.getMaximumObjectsPerBin()).append("\n");
+			sb.append("\t\tAverage per spatial bin: ")
+					.append(Math.floor(objectIndexStats.getAverageObjectsPerBin() * 10) / 10).append("\n");
+			sb.append("\t\tHistogram spatial bin ")
+					.append(objectIndexStats.getObjectsPerBinHistogram(20).toCsvString().replace("\n", "\n\t\t"))
+					.append("---\n");
 			sb.append("\t}\n");
 			sb.append("}");
 			return sb.toString();
