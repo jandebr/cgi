@@ -157,7 +157,7 @@ public class Metrics {
 	}
 
 	public long getLineWithLineIntersections() {
-		return lineWithPlaneIntersections;
+		return lineWithLineIntersections;
 	}
 
 	public long getBoundingBoxComputations() {
