@@ -57,6 +57,7 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 	protected void renderImpl(Scene scene, Collection<ViewPort> outputs) {
 		RenderState state = new RenderState(scene);
 		System.out.println(state);
+		System.out.println(scene.getSpatialIndex().getBinStatistics());
 		state.incrementStep();
 		renderRaster(state, outputs);
 		if (getDepthBlurParams() != null) {
@@ -224,28 +225,21 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 
 		@Override
 		public String toString() {
-			RaytraceableObjectViewPlaneIndex.BinStatistics objectIndexStats = getObjectIndex().getBinStatistics();
 			StringBuilder sb = new StringBuilder();
 			sb.append("RenderState {\n");
-			sb.append("\tView plane {\n");
-			sb.append("\t\tXY bounds: ").append(getViewPlaneBounds()).append("\n");
-			sb.append("\t\tZ: ").append(getViewPlaneZ()).append("\n");
-			sb.append("\t}\n");
-			sb.append("\tCamera {\n");
-			sb.append("\t\tPosition: ").append(getScene().getCamera().getPosition()).append("\n");
-			sb.append("\t}\n");
 			sb.append("\tObjects {\n");
 			sb.append("\t\tTop level objects: ").append(getScene().getTopLevelObjects().size()).append("\n");
 			sb.append("\t\tRaytraceable objects: ")
 					.append(SceneUtils.getAllRaytraceableObjectsInScene(getScene()).size()).append("\n");
-			sb.append("\t\tMaximum per spatial bin row: ").append(objectIndexStats.getMaximumObjectsPerBinRow())
+			sb.append("\t}\n");
+			sb.append("\tCamera {\n");
+			sb.append("\t\tPosition: ").append(getScene().getCamera().getPosition()).append("\n");
+			sb.append("\t}\n");
+			sb.append("\tView plane {\n");
+			sb.append("\t\tXY bounds: ").append(getViewPlaneBounds()).append("\n");
+			sb.append("\t\tZ: ").append(getViewPlaneZ()).append("\n");
+			sb.append("\t\t").append(getObjectIndex().getBinStatistics().toString().replace("\n", "\n\t\t"))
 					.append("\n");
-			sb.append("\t\tMaximum per spatial bin: ").append(objectIndexStats.getMaximumObjectsPerBin()).append("\n");
-			sb.append("\t\tAverage per spatial bin: ")
-					.append(Math.floor(objectIndexStats.getAverageObjectsPerBin() * 10) / 10).append("\n");
-			sb.append("\t\tHistogram spatial bin ")
-					.append(objectIndexStats.getObjectsPerBinHistogram(20).toCsvString().replace("\n", "\n\t\t"))
-					.append("---\n");
 			sb.append("\t}\n");
 			sb.append("}");
 			return sb.toString();

@@ -74,10 +74,14 @@ public class MetricsPanel extends JPanel {
 		panel.add(buildMetricValueLabel(computeMetrics.getVectorNormalizations()));
 		panel.add(buildMetricNameLabel("Vector angles"));
 		panel.add(buildMetricValueLabel(computeMetrics.getVectorAnglesInBetween()));
-		panel.add(buildMetricNameLabel("Line with plane intersections"));
-		panel.add(buildMetricValueLabel(computeMetrics.getLineWithPlaneIntersections()));
 		panel.add(buildMetricNameLabel("Line with line intersections"));
 		panel.add(buildMetricValueLabel(computeMetrics.getLineWithLineIntersections()));
+		panel.add(buildMetricNameLabel("Line with plane intersections"));
+		panel.add(buildMetricValueLabel(computeMetrics.getLineWithPlaneIntersections()));
+		panel.add(buildMetricNameLabel("Line with object intersections"));
+		panel.add(buildMetricValueLabel(computeMetrics.getLineWithObjectIntersections()));
+		panel.add(buildMetricNameLabel("Line with object hits"));
+		panel.add(buildMetricValueLabel(computeMetrics.getLineWithObjectHits()));
 		panel.add(buildMetricNameLabel("Bounding box computations"));
 		panel.add(buildMetricValueLabel(computeMetrics.getBoundingBoxComputations()));
 		JPanel parent = new JPanel(new BorderLayout());

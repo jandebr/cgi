@@ -226,6 +226,35 @@ public class RaytraceableObjectViewPlaneIndex {
 		public BinStatistics() {
 		}
 
+		@Override
+		public String toString() {
+			StringBuilder sb = new StringBuilder();
+			sb.append("View Plane Index statistics {\n");
+			sb.append("\tBins: ").append(getXbins() + " x " + getYbins()).append("\n");
+			sb.append("\tEmpty bins: ").append(getEmptyBins()).append("\n");
+			sb.append("\tMaximum objects per spatial bin row: ").append(getMaximumObjectsPerBinRow()).append("\n");
+			sb.append("\tMaximum objects per spatial bin: ").append(getMaximumObjectsPerBin()).append("\n");
+			sb.append("\tAverage objects per spatial bin: ").append(Math.floor(getAverageObjectsPerBin() * 10) / 10)
+					.append("\n");
+			sb.append("\tHistogram non-empty bins ")
+					.append(getObjectsPerBinHistogram(20).toCsvString().replace("\n", "\n\t")).append("---\n");
+			sb.append("}");
+			return sb.toString();
+		}
+
+		public int getEmptyBins() {
+			int empty = 0;
+			for (int y = 0; y < getYbins(); y++) {
+				for (int x = 0; x < getXbins(); x++) {
+					Collection<RaytraceableObject3D> objects = getObjectsInBin(x, y);
+					if (objects == null || objects.isEmpty()) {
+						empty++;
+					}
+				}
+			}
+			return empty;
+		}
+
 		public int getMaximumObjectsPerBinRow() {
 			int max = 0;
 			Collection<RaytraceableObject3D> rowObjects = new HashSet<RaytraceableObject3D>(100);
@@ -277,8 +306,6 @@ public class RaytraceableObjectViewPlaneIndex {
 
 	public class ObjectsPerBinHistogram {
 
-		private BinStatistics binStatistics;
-
 		private int classCount;
 
 		private int classRangeSize;
@@ -307,7 +334,7 @@ public class RaytraceableObjectViewPlaneIndex {
 			int size = getClassRangeSize();
 			int[] lowerBounds = new int[n];
 			for (int i = 0; i < n; i++) {
-				lowerBounds[i] = i * size;
+				lowerBounds[i] = Math.max(i * size, 1); // Excluding empty bins
 			}
 			return lowerBounds;
 		}
@@ -319,8 +346,10 @@ public class RaytraceableObjectViewPlaneIndex {
 			for (int y = 0; y < getYbins(); y++) {
 				for (int x = 0; x < getXbins(); x++) {
 					Collection<RaytraceableObject3D> objects = getObjectsInBin(x, y);
-					if (objects != null) {
-						int ci = Math.min((int) Math.floor(objects.size() / (double) size), n - 1);
+					int count = objects != null ? objects.size() : 0;
+					if (count > 0) {
+						// Excluding empty bins
+						int ci = Math.min((int) Math.floor(count / (double) size), n - 1);
 						values[ci]++;
 					}
 				}

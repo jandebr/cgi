@@ -60,34 +60,8 @@ public class SceneSpatialIndex {
 		return index;
 	}
 
-	public int getMaximumObjectsPerBin() {
-		int max = 0;
-		for (int zi = 0; zi < getZbins(); zi++) {
-			for (int yi = 0; yi < getYbins(); yi++) {
-				for (int xi = 0; xi < getXbins(); xi++) {
-					Collection<Object3D> objects = getObjectsInBin(xi, yi, zi);
-					if (objects != null) {
-						max = Math.max(max, objects.size());
-					}
-				}
-			}
-		}
-		return max;
-	}
-
-	public double getAverageObjectsPerBin() {
-		int sum = 0;
-		for (int zi = 0; zi < getZbins(); zi++) {
-			for (int yi = 0; yi < getYbins(); yi++) {
-				for (int xi = 0; xi < getXbins(); xi++) {
-					Collection<Object3D> objects = getObjectsInBin(xi, yi, zi);
-					if (objects != null) {
-						sum += objects.size();
-					}
-				}
-			}
-		}
-		return (double) sum / (getYbins() * getXbins() * getZbins());
+	public BinStatistics getBinStatistics() {
+		return new BinStatistics();
 	}
 
 	public Iterator<ObjectSurfacePoint3D> getObjectIntersections(LineSegment3D line, boolean lineStartsWithinScene) {
@@ -414,6 +388,143 @@ public class SceneSpatialIndex {
 
 		private Set<Object3D> getObjects() {
 			return getReusableObjectsSet();
+		}
+
+	}
+
+	public class BinStatistics {
+
+		public BinStatistics() {
+		}
+
+		@Override
+		public String toString() {
+			StringBuilder sb = new StringBuilder();
+			sb.append("Scene Spatial Index statistics {\n");
+			sb.append("\tBins: ").append(getXbins() + " x " + getYbins() + " x " + getZbins()).append("\n");
+			sb.append("\tEmpty bins: ").append(getEmptyBins()).append("\n");
+			sb.append("\tMaximum objects per spatial bin: ").append(getMaximumObjectsPerBin()).append("\n");
+			sb.append("\tAverage objects per spatial bin: ").append(Math.floor(getAverageObjectsPerBin() * 10) / 10)
+					.append("\n");
+			sb.append("\tHistogram non-empty bins ")
+					.append(getObjectsPerBinHistogram(20).toCsvString().replace("\n", "\n\t")).append("---\n");
+			sb.append("}");
+			return sb.toString();
+		}
+
+		public int getEmptyBins() {
+			int empty = 0;
+			for (int zi = 0; zi < getZbins(); zi++) {
+				for (int yi = 0; yi < getYbins(); yi++) {
+					for (int xi = 0; xi < getXbins(); xi++) {
+						Collection<Object3D> objects = getObjectsInBin(xi, yi, zi);
+						if (objects == null || objects.isEmpty()) {
+							empty++;
+						}
+					}
+				}
+			}
+			return empty;
+		}
+
+		public int getMaximumObjectsPerBin() {
+			int max = 0;
+			for (int zi = 0; zi < getZbins(); zi++) {
+				for (int yi = 0; yi < getYbins(); yi++) {
+					for (int xi = 0; xi < getXbins(); xi++) {
+						Collection<Object3D> objects = getObjectsInBin(xi, yi, zi);
+						if (objects != null) {
+							max = Math.max(max, objects.size());
+						}
+					}
+				}
+			}
+			return max;
+		}
+
+		public double getAverageObjectsPerBin() {
+			int sum = 0;
+			for (int zi = 0; zi < getZbins(); zi++) {
+				for (int yi = 0; yi < getYbins(); yi++) {
+					for (int xi = 0; xi < getXbins(); xi++) {
+						Collection<Object3D> objects = getObjectsInBin(xi, yi, zi);
+						if (objects != null) {
+							sum += objects.size();
+						}
+					}
+				}
+			}
+			return (double) sum / (getYbins() * getXbins() * getZbins());
+		}
+
+		public ObjectsPerBinHistogram getObjectsPerBinHistogram(int classCount) {
+			int classRangeSize = (int) Math.ceil(getMaximumObjectsPerBin() / (double) classCount);
+			return new ObjectsPerBinHistogram(classCount, classRangeSize);
+		}
+
+	}
+
+	public class ObjectsPerBinHistogram {
+
+		private int classCount;
+
+		private int classRangeSize;
+
+		public ObjectsPerBinHistogram(int classCount, int classRangeSize) {
+			this.classCount = classCount;
+			this.classRangeSize = classRangeSize;
+		}
+
+		public String toCsvString() {
+			StringBuilder sb = new StringBuilder(getClassCount() * 8);
+			sb.append("objects,count\n");
+			int[] lowerBounds = getClassLowerBounds();
+			int[] values = getClassValues();
+			for (int i = 0; i < lowerBounds.length; i++) {
+				sb.append(lowerBounds[i] + "+");
+				sb.append(',');
+				sb.append(values[i]);
+				sb.append('\n');
+			}
+			return sb.toString();
+		}
+
+		public int[] getClassLowerBounds() {
+			int n = getClassCount();
+			int size = getClassRangeSize();
+			int[] lowerBounds = new int[n];
+			for (int i = 0; i < n; i++) {
+				lowerBounds[i] = Math.max(i * size, 1); // Excluding empty bins
+			}
+			return lowerBounds;
+		}
+
+		public int[] getClassValues() {
+			int n = getClassCount();
+			int size = getClassRangeSize();
+			int[] values = new int[n];
+			for (int zi = 0; zi < getZbins(); zi++) {
+				for (int yi = 0; yi < getYbins(); yi++) {
+					for (int xi = 0; xi < getXbins(); xi++) {
+						Collection<Object3D> objects = getObjectsInBin(xi, yi, zi);
+						int count = objects != null ? objects.size() : 0;
+						if (count > 0) {
+							// Excluding empty bins
+							int ci = Math.min((int) Math.floor(count / (double) size), n - 1);
+							values[ci]++;
+						}
+					}
+				}
+			}
+			return values;
+		}
+
+		public int getClassCount() {
+			return classCount;
+		}
+
+		public int getClassRangeSize() {
+			return classRangeSize;
 		}
 
 	}

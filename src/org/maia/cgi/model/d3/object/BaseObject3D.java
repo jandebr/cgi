@@ -1,14 +1,18 @@
 package org.maia.cgi.model.d3.object;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
 import org.maia.cgi.geometry.d3.Box3D;
+import org.maia.cgi.geometry.d3.LineSegment3D;
 import org.maia.cgi.geometry.d3.Vector3D;
+import org.maia.cgi.metrics.Metrics;
 import org.maia.cgi.model.d3.CoordinateFrame;
 import org.maia.cgi.model.d3.camera.Camera;
+import org.maia.cgi.model.d3.scene.Scene;
 import org.maia.cgi.transform.d3.TransformMatrix;
 import org.maia.cgi.transform.d3.Transformation;
 import org.maia.cgi.transform.d3.TwoWayCompositeTransform;
@@ -269,7 +273,7 @@ public abstract class BaseObject3D implements BoundedObject3D, ComposableObject3
 	}
 
 	@Override
-	public Box3D getBoundingBox(CoordinateFrame cframe, Camera camera) {
+	public final Box3D getBoundingBox(CoordinateFrame cframe, Camera camera) {
 		Box3D bbox = boundingBoxes.get(cframe);
 		if (bbox == null) {
 			bbox = deriveBoundingBox(cframe, camera);
@@ -279,5 +283,21 @@ public abstract class BaseObject3D implements BoundedObject3D, ComposableObject3
 	}
 
 	protected abstract Box3D deriveBoundingBox(CoordinateFrame cframe, Camera camera);
+
+	@Override
+	public final void intersectWithRay(LineSegment3D ray, Scene scene, Collection<ObjectSurfacePoint3D> intersections,
+			boolean applyShading) {
+		int n = intersections.size();
+		intersectWithRayImpl(ray, scene, intersections, applyShading);
+		if (!isComposite()) {
+			Metrics.getInstance().incrementLineWithObjectIntersections();
+			if (intersections.size() > n) {
+				Metrics.getInstance().incrementLineWithObjectHits();
+			}
+		}
+	}
+
+	protected abstract void intersectWithRayImpl(LineSegment3D ray, Scene scene,
+			Collection<ObjectSurfacePoint3D> intersections, boolean applyShading);
 
 }

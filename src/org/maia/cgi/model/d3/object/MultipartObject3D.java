@@ -70,7 +70,7 @@ public class MultipartObject3D<T extends ComposableObject3D> extends BaseObject3
 	}
 
 	@Override
-	public void intersectWithRay(LineSegment3D ray, Scene scene, Collection<ObjectSurfacePoint3D> intersections,
+	protected void intersectWithRayImpl(LineSegment3D ray, Scene scene, Collection<ObjectSurfacePoint3D> intersections,
 			boolean applyShading) {
 		for (Iterator<T> it = getParts().iterator(); it.hasNext();) {
 			Object3D part = it.next();

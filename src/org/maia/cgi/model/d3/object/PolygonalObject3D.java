@@ -79,7 +79,7 @@ public class PolygonalObject3D extends VertexObject3D {
 	}
 
 	@Override
-	public void intersectWithRay(LineSegment3D ray, Scene scene, Collection<ObjectSurfacePoint3D> intersections,
+	protected void intersectWithRayImpl(LineSegment3D ray, Scene scene, Collection<ObjectSurfacePoint3D> intersections,
 			boolean applyShading) {
 		Point3D position = ray.intersect(getPlaneInCameraCoordinates(scene.getCamera()));
 		if (position != null) {

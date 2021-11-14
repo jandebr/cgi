@@ -24,6 +24,10 @@ public class Metrics {
 
 	private long lineWithLineIntersections;
 
+	private long lineWithObjectIntersections;
+
+	private long lineWithObjectHits;
+
 	private long boundingBoxComputations;
 
 	private Metrics() {
@@ -57,6 +61,8 @@ public class Metrics {
 		builder.append("\tvectorAnglesInBetween: ").append(vectorAnglesInBetween).append("\n");
 		builder.append("\tlineWithPlaneIntersections: ").append(lineWithPlaneIntersections).append("\n");
 		builder.append("\tlineWithLineIntersections: ").append(lineWithLineIntersections).append("\n");
+		builder.append("\tlineWithObjectIntersections: ").append(lineWithObjectIntersections).append("\n");
+		builder.append("\tlineWithObjectHits: ").append(lineWithObjectHits).append("\n");
 		builder.append("\tboundingBoxComputations: ").append(boundingBoxComputations).append("\n");
 		builder.append("}");
 		return builder.toString();
@@ -73,6 +79,8 @@ public class Metrics {
 		vectorAnglesInBetween = 0;
 		lineWithPlaneIntersections = 0;
 		lineWithLineIntersections = 0;
+		lineWithObjectIntersections = 0;
+		lineWithObjectHits = 0;
 		boundingBoxComputations = 0;
 	}
 
@@ -114,6 +122,14 @@ public class Metrics {
 
 	public void incrementLineWithLineIntersections() {
 		lineWithLineIntersections++;
+	}
+
+	public void incrementLineWithObjectIntersections() {
+		lineWithObjectIntersections++;
+	}
+
+	public void incrementLineWithObjectHits() {
+		lineWithObjectHits++;
 	}
 
 	public void incrementBoundingBoxComputations() {
@@ -158,6 +174,14 @@ public class Metrics {
 
 	public long getLineWithLineIntersections() {
 		return lineWithLineIntersections;
+	}
+
+	public long getLineWithObjectIntersections() {
+		return lineWithObjectIntersections;
+	}
+
+	public long getLineWithObjectHits() {
+		return lineWithObjectHits;
 	}
 
 	public long getBoundingBoxComputations() {
