@@ -86,6 +86,8 @@ public class Compositing {
 	}
 
 	public static Color combineColorsByTransparency(Color frontColor, Color backColor) {
+		if (frontColor.getAlpha() == 255)
+			return frontColor;
 		double alpha = frontColor.getAlpha() / 255.0;
 		double beta = 1.0 - alpha;
 		double gamma = backColor.getAlpha() / 255.0;
