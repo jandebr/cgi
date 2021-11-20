@@ -7,9 +7,9 @@ import org.maia.cgi.render.d3.view.ViewPort;
 
 public interface SceneRenderer {
 
-	void render(Scene scene, ViewPort output);
+	void render(Scene scene, ViewPort output, RenderOptions options);
 
-	void render(Scene scene, Collection<ViewPort> outputs);
+	void render(Scene scene, Collection<ViewPort> outputs, RenderOptions options);
 
 	void addProgressTracker(SceneRendererProgressTracker tracker);
 	

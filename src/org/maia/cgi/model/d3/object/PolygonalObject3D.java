@@ -15,6 +15,7 @@ import org.maia.cgi.model.d3.CoordinateFrame;
 import org.maia.cgi.model.d3.camera.Camera;
 import org.maia.cgi.model.d3.object.Mesh3D.Edge;
 import org.maia.cgi.model.d3.scene.Scene;
+import org.maia.cgi.render.d3.RenderOptions;
 
 /**
  * An object in 3D space that has the geometrical shape of a convex polygon
@@ -79,12 +80,12 @@ public class PolygonalObject3D extends VertexObject3D {
 	}
 
 	@Override
-	protected void intersectWithRayImpl(LineSegment3D ray, Scene scene, Collection<ObjectSurfacePoint3D> intersections,
-			boolean applyShading) {
+	protected void intersectSelfWithRayImpl(LineSegment3D ray, Scene scene, Collection<ObjectSurfacePoint3D> intersections,
+			RenderOptions options, boolean applyShading) {
 		Point3D position = ray.intersect(getPlaneInCameraCoordinates(scene.getCamera()));
 		if (position != null) {
 			if (insideBoundingBox(position, scene)) {
-				ObjectSurfacePoint3D point = sampleSurfacePoint(position, scene, applyShading);
+				ObjectSurfacePoint3D point = sampleSurfacePoint(position, scene, options, applyShading);
 				if (point != null) {
 					intersections.add(point);
 				}
@@ -109,7 +110,8 @@ public class PolygonalObject3D extends VertexObject3D {
 		return bbox.contains(positionInCamera);
 	}
 
-	protected ObjectSurfacePoint3D sampleSurfacePoint(Point3D positionInCamera, Scene scene, boolean applyShading) {
+	protected ObjectSurfacePoint3D sampleSurfacePoint(Point3D positionInCamera, Scene scene, RenderOptions options,
+			boolean applyShading) {
 		return null; // Subclasses should override this for ray tracing
 	}
 

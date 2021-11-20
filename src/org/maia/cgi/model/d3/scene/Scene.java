@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
 
+import org.maia.cgi.compose.d3.DepthBlurParameters;
+import org.maia.cgi.compose.d3.DepthFunction;
 import org.maia.cgi.geometry.d3.Box3D;
 import org.maia.cgi.metrics.Metrics;
 import org.maia.cgi.model.d3.CoordinateFrame;
@@ -39,7 +41,9 @@ public class Scene implements CameraObserver {
 
 	private ColorDepthBuffer backdrop;
 
-	private SceneRenderParameters renderParameters;
+	private DepthFunction darknessDepthFunction;
+
+	private DepthBlurParameters depthBlurParameters;
 
 	public Scene(Camera camera) {
 		this(null, camera);
@@ -47,7 +51,6 @@ public class Scene implements CameraObserver {
 
 	public Scene(String name, Camera camera) {
 		this.name = name;
-		this.renderParameters = new SceneRenderParameters();
 		if (camera == null)
 			throw new NullPointerException("A scene must always have a main camera");
 		changeCamera(camera);
@@ -173,8 +176,20 @@ public class Scene implements CameraObserver {
 		this.backdrop = backdrop;
 	}
 
-	public SceneRenderParameters getRenderParameters() {
-		return renderParameters;
+	public DepthFunction getDarknessDepthFunction() {
+		return darknessDepthFunction;
+	}
+
+	public void setDarknessDepthFunction(DepthFunction darknessDepthFunction) {
+		this.darknessDepthFunction = darknessDepthFunction;
+	}
+
+	public DepthBlurParameters getDepthBlurParameters() {
+		return depthBlurParameters;
+	}
+
+	public void setDepthBlurParameters(DepthBlurParameters depthBlurParameters) {
+		this.depthBlurParameters = depthBlurParameters;
 	}
 
 }

@@ -16,12 +16,12 @@ public abstract class BaseSceneRenderer implements SceneRenderer {
 	}
 
 	@Override
-	public final void render(Scene scene, ViewPort output) {
-		render(scene, Collections.singleton(output));
+	public final void render(Scene scene, ViewPort output, RenderOptions options) {
+		render(scene, Collections.singleton(output), options);
 	}
 
 	@Override
-	public final void render(Scene scene, Collection<ViewPort> outputs) {
+	public final void render(Scene scene, Collection<ViewPort> outputs, RenderOptions options) {
 		for (ViewPort output : outputs) {
 			output.startRendering();
 			output.clear();
@@ -29,7 +29,7 @@ public abstract class BaseSceneRenderer implements SceneRenderer {
 		for (SceneRendererProgressTracker tracker : getProgressTrackers()) {
 			tracker.renderingStarted(this, scene);
 		}
-		renderImpl(scene, outputs);
+		renderImpl(scene, outputs, options);
 		for (ViewPort output : outputs) {
 			output.stopRendering();
 		}
@@ -38,7 +38,7 @@ public abstract class BaseSceneRenderer implements SceneRenderer {
 		}
 	}
 
-	protected abstract void renderImpl(Scene scene, Collection<ViewPort> outputs);
+	protected abstract void renderImpl(Scene scene, Collection<ViewPort> outputs, RenderOptions options);
 
 	protected void fireRenderingProgressUpdate(Scene scene, int step, double stepProgress, int totalSteps) {
 		for (SceneRendererProgressTracker tracker : getProgressTrackers()) {

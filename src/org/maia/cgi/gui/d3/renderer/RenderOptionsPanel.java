@@ -17,7 +17,8 @@ import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JToggleButton;
 
-import org.maia.cgi.gui.d3.renderer.RenderOptions.SamplingMode;
+import org.maia.cgi.render.d3.RenderOptions;
+import org.maia.cgi.render.d3.RenderOptions.SamplingMode;
 
 @SuppressWarnings("serial")
 public class RenderOptionsPanel extends Box {

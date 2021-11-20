@@ -10,6 +10,7 @@ import org.maia.cgi.metrics.Metrics;
 import org.maia.cgi.model.d3.CoordinateFrame;
 import org.maia.cgi.model.d3.camera.Camera;
 import org.maia.cgi.model.d3.scene.Scene;
+import org.maia.cgi.render.d3.RenderOptions;
 
 public class MultipartObject3D<T extends ComposableObject3D> extends BaseObject3D implements CompositeObject3D<T> {
 
@@ -70,14 +71,30 @@ public class MultipartObject3D<T extends ComposableObject3D> extends BaseObject3
 	}
 
 	@Override
-	protected void intersectWithRayImpl(LineSegment3D ray, Scene scene, Collection<ObjectSurfacePoint3D> intersections,
-			boolean applyShading) {
+	public void intersectWithRay(LineSegment3D ray, Scene scene, Collection<ObjectSurfacePoint3D> intersections,
+			RenderOptions options) {
 		for (Iterator<T> it = getParts().iterator(); it.hasNext();) {
 			Object3D part = it.next();
 			if (part.isRaytraceable()) {
-				part.asRaytraceableObject().intersectWithRay(ray, scene, intersections, applyShading);
+				part.asRaytraceableObject().intersectWithRay(ray, scene, intersections, options);
 			}
 		}
+	}
+
+	@Override
+	public void intersectWithRayNoShading(LineSegment3D ray, Scene scene, Collection<ObjectSurfacePoint3D> intersections) {
+		for (Iterator<T> it = getParts().iterator(); it.hasNext();) {
+			Object3D part = it.next();
+			if (part.isRaytraceable()) {
+				part.asRaytraceableObject().intersectWithRayNoShading(ray, scene, intersections);
+			}
+		}
+	}
+
+	@Override
+	protected void intersectSelfWithRayImpl(LineSegment3D ray, Scene scene,
+			Collection<ObjectSurfacePoint3D> intersections, RenderOptions options, boolean applyShading) {
+		// nothing to do, intersections only apply to parts
 	}
 
 	@Override

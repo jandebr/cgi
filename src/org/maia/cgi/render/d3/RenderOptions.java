@@ -1,4 +1,4 @@
-package org.maia.cgi.gui.d3.renderer;
+package org.maia.cgi.render.d3;
 
 import java.awt.Color;
 
@@ -26,6 +26,10 @@ public class RenderOptions {
 
 	private Color wireframeColorFar;
 
+	private int numberOfRenderThreads;
+
+	private static final String PROPERTY_RENDER_THREADS = "renderThreads";
+
 	private RenderOptions() {
 	}
 
@@ -42,6 +46,7 @@ public class RenderOptions {
 		options.setSceneBackgroundColor(Color.WHITE);
 		options.setWireframeColorNear(Color.BLACK);
 		options.setWireframeColorFar(Color.LIGHT_GRAY);
+		options.setNumberOfRenderThreads(Integer.parseInt(System.getProperty(PROPERTY_RENDER_THREADS, "1")));
 		return options;
 	}
 
@@ -135,6 +140,19 @@ public class RenderOptions {
 
 	public void setWireframeColorFar(Color wireframeColorFar) {
 		this.wireframeColorFar = wireframeColorFar;
+	}
+
+	public int getSafeNumberOfRenderThreads() {
+		int cores = Runtime.getRuntime().availableProcessors();
+		return Math.max(Math.min(getNumberOfRenderThreads(), cores), 1);
+	}
+
+	public int getNumberOfRenderThreads() {
+		return numberOfRenderThreads;
+	}
+
+	public void setNumberOfRenderThreads(int numberOfRenderThreads) {
+		this.numberOfRenderThreads = numberOfRenderThreads;
 	}
 
 	public static enum RenderMode {

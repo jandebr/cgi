@@ -24,43 +24,24 @@ import org.maia.cgi.model.d3.object.RaytraceableObject3D;
 import org.maia.cgi.model.d3.scene.Scene;
 import org.maia.cgi.model.d3.scene.SceneUtils;
 import org.maia.cgi.render.d3.BaseSceneRenderer;
+import org.maia.cgi.render.d3.RenderOptions;
 import org.maia.cgi.render.d3.view.ColorDepthBuffer;
 import org.maia.cgi.render.d3.view.ViewPort;
 import org.maia.cgi.shading.d2.TextureMapRegistry;
 
 public class RaytraceRenderer extends BaseSceneRenderer {
 
-	private int pixelWidth;
-
-	private int pixelHeight;
-
-	private int samplesPerPixelX;
-
-	private int samplesPerPixelY;
-
-	private DepthBlurParameters depthBlurParams;
-
-	public RaytraceRenderer(int pixelWidth, int pixelHeight, int samplesPerPixelX, int samplesPerPixelY) {
-		this(pixelWidth, pixelHeight, samplesPerPixelX, samplesPerPixelY, null);
-	}
-
-	public RaytraceRenderer(int pixelWidth, int pixelHeight, int samplesPerPixelX, int samplesPerPixelY,
-			DepthBlurParameters depthBlurParams) {
-		setPixelWidth(pixelWidth);
-		setPixelHeight(pixelHeight);
-		setSamplesPerPixelX(samplesPerPixelX);
-		setSamplesPerPixelY(samplesPerPixelY);
-		setDepthBlurParams(depthBlurParams);
+	public RaytraceRenderer() {
 	}
 
 	@Override
-	protected void renderImpl(Scene scene, Collection<ViewPort> outputs) {
-		RenderState state = new RenderState(scene);
+	protected void renderImpl(Scene scene, Collection<ViewPort> outputs, RenderOptions options) {
+		RenderState state = new RenderState(scene, options);
 		System.out.println(state);
 		System.out.println(scene.getSpatialIndex().getBinStatistics());
 		state.incrementStep();
 		renderRaster(state, outputs);
-		if (getDepthBlurParams() != null) {
+		if (state.getCurrentStep() < state.getTotalSteps()) {
 			state.incrementStep();
 			applyDepthBlur(state, outputs);
 		}
@@ -69,7 +50,7 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 
 	private synchronized void renderRaster(RenderState state, Collection<ViewPort> outputs) {
 		ThreadGroup workers = new ThreadGroup("Raytrace workers");
-		int n = state.getScene().getRenderParameters().getSafeNumberOfRenderThreads();
+		int n = state.getOptions().getSafeNumberOfRenderThreads();
 		System.out.println("Spawning " + n + " raytrace worker" + (n > 1 ? "s" : ""));
 		for (int i = 0; i < n; i++) {
 			Thread t = new Thread(workers, new RenderRasterWorker(state, outputs), "Raytrace worker #" + i);
@@ -95,9 +76,9 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 	private void applyDepthBlur(RenderState state, Collection<ViewPort> outputs) {
 		// Blur by depth
 		ColorDepthBuffer raster = state.getRaster();
-		int sppx = getSamplesPerPixelX();
-		int sppy = getSamplesPerPixelY();
-		DepthBlurParameters params = getDepthBlurParams().clone();
+		int sppx = state.getSamplesPerPixelX();
+		int sppy = state.getSamplesPerPixelY();
+		DepthBlurParameters params = state.getScene().getDepthBlurParameters().clone();
 		params.setMaxBlurPixelRadius(params.getMaxBlurPixelRadius() * Math.max(sppx, sppy)); // radius in samples
 		raster.replaceImage(Compositing.blurImageByDepth(raster, params, new DepthBlurTracker(state)));
 		// Update outputs
@@ -106,11 +87,11 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 			output.clear();
 		}
 		ConvolutionMatrix avgMatrix = state.getPixelAveragingConvolutionMatrix();
-		int pw = getPixelWidth();
-		int ph = getPixelHeight();
+		int pw = state.getPixelWidth();
+		int ph = state.getPixelHeight();
 		for (int iy = 0; iy < ph; iy++) {
 			for (int ix = 0; ix < pw; ix++) {
-				if (getSamplesPerPixel() == 1) {
+				if (state.getSamplesPerPixel() == 1) {
 					renderPixelAtViewPorts(ix, iy, raster.getColor(ix, iy), outputs);
 				} else {
 					renderPixelAtViewPorts(ix, iy, raster.convoluteColor(ix * sppx, iy * sppy, avgMatrix), outputs);
@@ -127,53 +108,11 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 		}
 	}
 
-	public int getPixelWidth() {
-		return pixelWidth;
-	}
-
-	public void setPixelWidth(int pixelWidth) {
-		this.pixelWidth = pixelWidth;
-	}
-
-	public int getPixelHeight() {
-		return pixelHeight;
-	}
-
-	public void setPixelHeight(int pixelHeight) {
-		this.pixelHeight = pixelHeight;
-	}
-
-	public int getSamplesPerPixel() {
-		return getSamplesPerPixelX() * getSamplesPerPixelY();
-	}
-
-	public int getSamplesPerPixelX() {
-		return samplesPerPixelX;
-	}
-
-	public void setSamplesPerPixelX(int samples) {
-		this.samplesPerPixelX = samples;
-	}
-
-	public int getSamplesPerPixelY() {
-		return samplesPerPixelY;
-	}
-
-	public void setSamplesPerPixelY(int samples) {
-		this.samplesPerPixelY = samples;
-	}
-
-	public DepthBlurParameters getDepthBlurParams() {
-		return depthBlurParams;
-	}
-
-	public void setDepthBlurParams(DepthBlurParameters depthBlurParams) {
-		this.depthBlurParams = depthBlurParams;
-	}
-
 	private class RenderState {
 
 		private Scene scene;
+
+		private RenderOptions options;
 
 		private Rectangle2D viewPlaneBounds;
 
@@ -193,20 +132,21 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 
 		private int activeRenderRasterWorkers;
 
-		public RenderState(Scene scene) {
+		public RenderState(Scene scene, RenderOptions options) {
 			ViewVolume vv = scene.getCamera().getViewVolume();
 			this.scene = scene;
+			this.options = options;
 			this.viewPlaneBounds = vv.getViewPlaneRectangle();
 			this.viewPlaneZ = vv.getViewPlaneZ();
 			this.raster = new ColorDepthBuffer(getPixelWidth() * getSamplesPerPixelX(), getPixelHeight()
-					* getSamplesPerPixelY(), scene.getRenderParameters().getAmbientColor());
+					* getSamplesPerPixelY(), options.getSceneBackgroundColor());
 			this.pixelAveragingConvolutionMatrix = Convolution.getScaledGaussianBlurMatrix(getSamplesPerPixelY(),
 					getSamplesPerPixelX(), 2.0);
 			int xBins = Math.min((int) Math.ceil(getPixelWidth() * getSamplesPerPixelX() / 8), 500);
 			int yBins = Math.min((int) Math.ceil(getPixelHeight() * getSamplesPerPixelY() / 8), 500);
 			this.objectIndex = new RaytraceableObjectViewPlaneIndex(scene.getCamera(), xBins, yBins);
 			this.currentStep = 0;
-			this.totalSteps = getDepthBlurParams() == null ? 1 : 3;
+			this.totalSteps = (options.isDepthBlurEnabled() && scene.getDepthBlurParameters() != null) ? 3 : 1;
 			this.nextRenderLineIndex = 0;
 			this.activeRenderRasterWorkers = 0;
 			init();
@@ -261,8 +201,32 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 			return index;
 		}
 
+		public int getPixelWidth() {
+			return getOptions().getRenderWidth();
+		}
+
+		public int getPixelHeight() {
+			return getOptions().getRenderHeight();
+		}
+
+		public int getSamplesPerPixelX() {
+			return getOptions().getSamplingMode().getSamplesPerPixelX();
+		}
+
+		public int getSamplesPerPixelY() {
+			return getOptions().getSamplingMode().getSamplesPerPixelY();
+		}
+
+		public int getSamplesPerPixel() {
+			return getSamplesPerPixelX() * getSamplesPerPixelY();
+		}
+
 		public Scene getScene() {
 			return scene;
+		}
+
+		public RenderOptions getOptions() {
+			return options;
 		}
 
 		public Rectangle2D getViewPlaneBounds() {
@@ -335,8 +299,8 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 		@Override
 		public void run() {
 			RenderState state = getState();
-			int pw = getPixelWidth();
-			int ph = getPixelHeight();
+			int pw = state.getPixelWidth();
+			int ph = state.getPixelHeight();
 			double vw = state.getViewPlaneBounds().getWidth();
 			double vh = state.getViewPlaneBounds().getHeight();
 			double vz = state.getViewPlaneZ();
@@ -357,7 +321,7 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 		}
 
 		private void renderPixel(int ix, int iy, Point3D viewPoint) {
-			if (getSamplesPerPixel() == 1) {
+			if (getState().getSamplesPerPixel() == 1) {
 				renderPixelWithoutSupersampling(ix, iy, viewPoint);
 			} else {
 				renderPixelBySupersampling(ix, iy, viewPoint);
@@ -380,10 +344,10 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 		private void renderPixelBySupersampling(int ix, int iy, Point3D viewPoint) {
 			RenderState state = getState();
 			ColorDepthBuffer raster = state.getRaster();
-			int sppx = getSamplesPerPixelX();
-			int sppy = getSamplesPerPixelY();
-			double pvw = state.getViewPlaneBounds().getWidth() / getPixelWidth(); // pixel view width
-			double pvh = state.getViewPlaneBounds().getHeight() / getPixelHeight(); // pixel view height
+			int sppx = state.getSamplesPerPixelX();
+			int sppy = state.getSamplesPerPixelY();
+			double pvw = state.getViewPlaneBounds().getWidth() / state.getPixelWidth(); // pixel view width
+			double pvh = state.getViewPlaneBounds().getHeight() / state.getPixelHeight(); // pixel view height
 			for (int si = 0; si < sppy; si++) {
 				int iry = iy * sppy + si;
 				double vsy = viewPoint.getY() + pvh / 2 - (si + 0.5) / sppy * pvh;
@@ -416,12 +380,12 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 					pointOnViewPlane.getY());
 			if (objects != null) {
 				for (RaytraceableObject3D object : objects) {
-					object.intersectWithRay(ray, scene, intersections, true);
+					object.intersectWithRay(ray, scene, intersections, state.getOptions());
 				}
 			}
 			// From backdrop, if any
 			ColorDepthBuffer backDrop = scene.getBackdrop();
-			if (backDrop != null && scene.getRenderParameters().isBackdropEnabled()) {
+			if (backDrop != null && getState().getOptions().isBackdropEnabled()) {
 				Color color = backDrop.getColor(ix, iy);
 				double depth = backDrop.getDepth(ix, iy);
 				double z = -depth;

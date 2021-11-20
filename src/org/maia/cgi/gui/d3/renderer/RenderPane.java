@@ -11,6 +11,7 @@ import javax.swing.Scrollable;
 
 import org.maia.cgi.compose.Compositing;
 import org.maia.cgi.geometry.d2.Rectangle2D;
+import org.maia.cgi.render.d3.RenderOptions;
 import org.maia.cgi.render.d3.view.GraphicsViewPortImpl;
 import org.maia.cgi.render.d3.view.ViewPort;
 

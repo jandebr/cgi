@@ -5,7 +5,6 @@ import java.util.Collection;
 import org.maia.cgi.compose.d3.DepthBlurParameters;
 import org.maia.cgi.compose.d3.DepthFunction;
 import org.maia.cgi.geometry.d3.Point3D;
-import org.maia.cgi.gui.d3.renderer.RenderOptions;
 import org.maia.cgi.model.d3.camera.Camera;
 import org.maia.cgi.model.d3.camera.PerspectiveViewVolume;
 import org.maia.cgi.model.d3.camera.RevolvingCamera;
@@ -13,11 +12,10 @@ import org.maia.cgi.model.d3.camera.RevolvingCameraImpl;
 import org.maia.cgi.model.d3.camera.ViewVolume;
 import org.maia.cgi.model.d3.light.LightSource;
 import org.maia.cgi.model.d3.object.Object3D;
+import org.maia.cgi.render.d3.RenderOptions;
 import org.maia.cgi.render.d3.view.ColorDepthBuffer;
 
 public abstract class SceneBuilder {
-
-	public static final String PROPERTY_RENDER_THREADS = "renderThreads";
 
 	protected SceneBuilder() {
 	}
@@ -35,7 +33,8 @@ public abstract class SceneBuilder {
 			scene.addLightSource(light);
 		}
 		scene.setBackdrop(createBackdrop(scene, options));
-		initRenderParameters(scene, options);
+		scene.setDarknessDepthFunction(createDarknessDepthFunction(scene, options));
+		scene.setDepthBlurParameters(createDepthBlurParameters(scene, options));
 		return scene;
 	}
 
@@ -53,16 +52,6 @@ public abstract class SceneBuilder {
 
 	protected ColorDepthBuffer createBackdrop(Scene scene, RenderOptions options) {
 		return null;
-	}
-
-	protected void initRenderParameters(Scene scene, RenderOptions options) {
-		SceneRenderParameters parameters = scene.getRenderParameters();
-		parameters.setAmbientColor(options.getSceneBackgroundColor());
-		parameters.setShadowsEnabled(options.isShadowsEnabled());
-		parameters.setBackdropEnabled(options.isBackdropEnabled());
-		parameters.setDarknessDepthFunction(createDarknessDepthFunction(scene, options));
-		parameters.setDepthBlurParameters(createDepthBlurParameters(scene, options));
-		parameters.setNumberOfRenderThreads(Integer.parseInt(System.getProperty(PROPERTY_RENDER_THREADS, "1")));
 	}
 
 	protected DepthFunction createDarknessDepthFunction(Scene scene, RenderOptions options) {

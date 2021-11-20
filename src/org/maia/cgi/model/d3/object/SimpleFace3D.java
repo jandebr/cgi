@@ -13,6 +13,7 @@ import org.maia.cgi.metrics.Metrics;
 import org.maia.cgi.model.d3.OrthographicProjection;
 import org.maia.cgi.model.d3.camera.Camera;
 import org.maia.cgi.model.d3.scene.Scene;
+import org.maia.cgi.render.d3.RenderOptions;
 import org.maia.cgi.shading.d3.FlatShadingModel;
 
 /**
@@ -62,14 +63,15 @@ public class SimpleFace3D extends PolygonalObject3D {
 	}
 
 	@Override
-	protected ObjectSurfacePoint3D sampleSurfacePoint(Point3D positionInCamera, Scene scene, boolean applyShading) {
+	protected ObjectSurfacePoint3D sampleSurfacePoint(Point3D positionInCamera, Scene scene, RenderOptions options,
+			boolean applyShading) {
 		ObjectSurfacePoint3D surfacePoint = null;
 		if (containsPointInCameraCoordinates(positionInCamera, scene)) {
 			Color color = sampleBaseColor(positionInCamera, scene);
 			if (color != null) {
 				surfacePoint = new ObjectSurfacePoint3DImpl(this, positionInCamera, color);
 				if (applyShading) {
-					getShadingModel().applyShading(surfacePoint, scene);
+					getShadingModel().applyShading(surfacePoint, scene, options);
 				}
 			}
 		}

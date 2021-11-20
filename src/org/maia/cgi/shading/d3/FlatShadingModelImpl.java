@@ -17,6 +17,7 @@ import org.maia.cgi.model.d3.object.Object3D;
 import org.maia.cgi.model.d3.object.ObjectSurfacePoint3D;
 import org.maia.cgi.model.d3.object.PolygonalObject3D;
 import org.maia.cgi.model.d3.scene.Scene;
+import org.maia.cgi.render.d3.RenderOptions;
 
 public class FlatShadingModelImpl implements FlatShadingModel {
 
@@ -44,33 +45,36 @@ public class FlatShadingModelImpl implements FlatShadingModel {
 	}
 
 	@Override
-	public void applyShading(ObjectSurfacePoint3D surfacePoint, Scene scene) {
+	public void applyShading(ObjectSurfacePoint3D surfacePoint, Scene scene, RenderOptions options) {
 		Object3D object = surfacePoint.getObject();
 		if (object instanceof PolygonalObject3D) {
 			surfacePoint.setColor(recolor(surfacePoint.getColor(), surfacePoint.getPositionInCamera(),
-					(PolygonalObject3D) object, scene));
+					(PolygonalObject3D) object, scene, options));
 		}
 	}
 
-	protected Color recolor(Color surfaceColor, Point3D surfacePositionInCamera, PolygonalObject3D object, Scene scene) {
+	protected Color recolor(Color surfaceColor, Point3D surfacePositionInCamera, PolygonalObject3D object, Scene scene,
+			RenderOptions options) {
 		Color color = surfaceColor;
-		color = Compositing.adjustBrightness(color, getBrightnessFactor(surfacePositionInCamera, object, scene));
-		color = Compositing.adjustBrightness(color, -getDarknessFactorByDepth(surfacePositionInCamera, scene));
+		color = Compositing.adjustBrightness(color,
+				getBrightnessFactor(surfacePositionInCamera, object, scene, options));
+		color = Compositing.adjustBrightness(color, -getDarknessFactorByDepth(surfacePositionInCamera, scene, options));
 		return color;
 	}
 
-	protected double getBrightnessFactor(Point3D surfacePositionInCamera, PolygonalObject3D object, Scene scene) {
+	protected double getBrightnessFactor(Point3D surfacePositionInCamera, PolygonalObject3D object, Scene scene,
+			RenderOptions options) {
 		Iterator<LightSource> it = scene.getLightSources().iterator();
 		double product = 1.0;
 		while (it.hasNext()) {
-			double lightFactor = getBrightnessFactor(it.next(), surfacePositionInCamera, object, scene);
+			double lightFactor = getBrightnessFactor(it.next(), surfacePositionInCamera, object, scene, options);
 			product *= 1.0 - (lightFactor + 1.0) / 2.0;
 		}
 		return (1.0 - product) * 2.0 - 1.0;
 	}
 
 	protected double getBrightnessFactor(LightSource lightSource, Point3D surfacePositionInCamera,
-			PolygonalObject3D object, Scene scene) {
+			PolygonalObject3D object, Scene scene, RenderOptions options) {
 		double factor = -1.0;
 		double brightness = lightSource.getBrightness() * getLightReflectionFactor();
 		if (lightSource instanceof AmbientLight) {
@@ -78,7 +82,7 @@ public class FlatShadingModelImpl implements FlatShadingModel {
 		} else {
 			LineSegment3D ray = getRayFromSurfacePositionToLightSource(lightSource, surfacePositionInCamera, scene);
 			if (ray != null) {
-				if (scene.getRenderParameters().isShadowsEnabled()) {
+				if (options.isShadowsEnabled()) {
 					brightness *= getLightTranslucency(ray, object, scene);
 				} else {
 					brightness *= 0.7; // compensate unrealistic over-lighting of a scene in the absence of shadows
@@ -124,10 +128,10 @@ public class FlatShadingModelImpl implements FlatShadingModel {
 		return translucency;
 	}
 
-	protected double getDarknessFactorByDepth(Point3D surfacePositionInCamera, Scene scene) {
+	protected double getDarknessFactorByDepth(Point3D surfacePositionInCamera, Scene scene, RenderOptions options) {
 		double darkness = 0;
-		DepthFunction df = scene.getRenderParameters().getDarknessDepthFunction();
-		if (df != null) {
+		DepthFunction df = scene.getDarknessDepthFunction();
+		if (options.isDepthDarknessEnabled() && df != null) {
 			double depth = -surfacePositionInCamera.getZ();
 			darkness = Math.max(Math.min(df.eval(depth), 1.0), 0);
 		}

@@ -9,6 +9,7 @@ import org.maia.cgi.geometry.d2.Rectangle2D;
 import org.maia.cgi.geometry.d3.Point3D;
 import org.maia.cgi.model.d3.camera.Camera;
 import org.maia.cgi.model.d3.scene.Scene;
+import org.maia.cgi.render.d3.RenderOptions;
 import org.maia.cgi.shading.d2.Mask;
 import org.maia.cgi.shading.d2.TextureMap;
 import org.maia.cgi.shading.d2.TextureMapHandle;
@@ -95,10 +96,13 @@ public class SimpleTexturedFace3D extends SimpleFace3D {
 	}
 
 	@Override
-	protected ObjectSurfacePoint3D sampleSurfacePoint(Point3D positionInCamera, Scene scene, boolean applyShading) {
-		ObjectSurfacePoint3D surfacePoint = super.sampleSurfacePoint(positionInCamera, scene, applyShading);
-		if (surfacePoint != null && applyShading) {
-			applyLuminance(surfacePoint, scene);
+	protected ObjectSurfacePoint3D sampleSurfacePoint(Point3D positionInCamera, Scene scene, RenderOptions options,
+			boolean applyShading) {
+		ObjectSurfacePoint3D surfacePoint = super.sampleSurfacePoint(positionInCamera, scene, options, applyShading);
+		if (surfacePoint != null) {
+			if (applyShading) {
+				applyLuminance(surfacePoint, scene);
+			}
 			applyTransparency(surfacePoint, scene);
 		}
 		return surfacePoint;

@@ -1,8 +1,8 @@
 package org.maia.cgi.gui.d3.renderer;
 
-import org.maia.cgi.compose.d3.DepthBlurParameters;
-import org.maia.cgi.gui.d3.renderer.RenderOptions.RenderMode;
 import org.maia.cgi.model.d3.scene.Scene;
+import org.maia.cgi.render.d3.RenderOptions;
+import org.maia.cgi.render.d3.RenderOptions.RenderMode;
 import org.maia.cgi.render.d3.SceneRenderer;
 import org.maia.cgi.render.d3.raytrace.RaytraceRenderer;
 import org.maia.cgi.render.d3.wireframe.WireframeRenderer;
@@ -24,17 +24,11 @@ public class DefaultRenderKit implements RenderKit {
 	}
 
 	protected SceneRenderer createPrototypeSceneRenderer(Scene scene, RenderOptions options) {
-		return new WireframeRenderer(options.getWireframeColorNear(), options.getWireframeColorFar());
+		return new WireframeRenderer();
 	}
 
 	protected SceneRenderer createRealisticSceneRenderer(Scene scene, RenderOptions options) {
-		scene.getRenderParameters().setShadowsEnabled(options.isShadowsEnabled());
-		scene.getRenderParameters().setBackdropEnabled(options.isBackdropEnabled());
-		int sppX = options.getSamplingMode().getSamplesPerPixelX();
-		int sppY = options.getSamplingMode().getSamplesPerPixelY();
-		DepthBlurParameters depthBlur = options.isDepthBlurEnabled() ? scene.getRenderParameters()
-				.getDepthBlurParameters() : null;
-		return new RaytraceRenderer(options.getRenderWidth(), options.getRenderHeight(), sppX, sppY, depthBlur);
+		return new RaytraceRenderer();
 	}
 
 }

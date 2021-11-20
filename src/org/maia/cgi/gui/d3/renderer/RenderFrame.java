@@ -38,13 +38,14 @@ import javax.swing.SwingUtilities;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.maia.cgi.gui.GradientButton;
-import org.maia.cgi.gui.d3.renderer.RenderOptions.RenderMode;
 import org.maia.cgi.gui.d3.renderer.RenderOptionsPanel.RenderOptionsPanelObserver;
 import org.maia.cgi.metrics.Metrics;
 import org.maia.cgi.model.d3.camera.Camera;
 import org.maia.cgi.model.d3.camera.CameraObserver;
 import org.maia.cgi.model.d3.scene.Scene;
 import org.maia.cgi.model.d3.scene.SceneUtils;
+import org.maia.cgi.render.d3.RenderOptions;
+import org.maia.cgi.render.d3.RenderOptions.RenderMode;
 import org.maia.cgi.render.d3.SceneRenderer;
 import org.maia.cgi.render.d3.SceneRendererProgressTracker;
 import org.maia.cgi.render.d3.view.ViewPort;
@@ -353,12 +354,13 @@ public class RenderFrame extends JFrame implements SceneRendererProgressTracker,
 
 	protected synchronized void render(RenderMode renderMode) {
 		if (isSceneLoaded() && !isRendering()) {
-			getRenderOptions().setRenderMode(renderMode);
-			SceneRenderer renderer = getRenderKit().createRenderer(getScene(), getRenderOptions());
+			RenderOptions options = getRenderOptions();
+			options.setRenderMode(renderMode);
+			SceneRenderer renderer = getRenderKit().createRenderer(getScene(), options);
 			renderer.addProgressTracker(this);
 			renderer.addProgressTracker(new RenderChrono());
 			ViewPort viewPort = getRenderPane().getOutputViewPort();
-			Thread worker = new Thread(new RenderWorker(renderer, viewPort));
+			Thread worker = new Thread(new RenderWorker(renderer, viewPort, options));
 			setRenderThread(worker);
 			worker.start();
 		}
@@ -584,15 +586,18 @@ public class RenderFrame extends JFrame implements SceneRendererProgressTracker,
 
 		private ViewPort viewPort;
 
-		public RenderWorker(SceneRenderer renderer, ViewPort viewPort) {
+		private RenderOptions options;
+
+		public RenderWorker(SceneRenderer renderer, ViewPort viewPort, RenderOptions options) {
 			this.renderer = renderer;
 			this.viewPort = viewPort;
+			this.options = options;
 		}
 
 		@Override
 		public void run() {
 			Metrics.getInstance().resetCounters();
-			getRenderer().render(getScene(), getViewPort());
+			getRenderer().render(getScene(), getViewPort(), getOptions());
 		}
 
 		private SceneRenderer getRenderer() {
@@ -601,6 +606,10 @@ public class RenderFrame extends JFrame implements SceneRendererProgressTracker,
 
 		private ViewPort getViewPort() {
 			return viewPort;
+		}
+
+		private RenderOptions getOptions() {
+			return options;
 		}
 
 	}
