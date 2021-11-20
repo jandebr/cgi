@@ -2,7 +2,6 @@ package org.maia.cgi.model.d3.scene;
 
 import java.util.Collection;
 
-import org.maia.cgi.compose.Compositing;
 import org.maia.cgi.compose.d3.DepthBlurParameters;
 import org.maia.cgi.compose.d3.DepthFunction;
 import org.maia.cgi.geometry.d3.Point3D;
@@ -58,7 +57,7 @@ public abstract class SceneBuilder {
 
 	protected void initRenderParameters(Scene scene, RenderOptions options) {
 		SceneRenderParameters parameters = scene.getRenderParameters();
-		parameters.setAmbientColor(Compositing.setTransparency(options.getSceneBackgroundColor(), 1.0));
+		parameters.setAmbientColor(options.getSceneBackgroundColor());
 		parameters.setShadowsEnabled(options.isShadowsEnabled());
 		parameters.setBackdropEnabled(options.isBackdropEnabled());
 		parameters.setDarknessDepthFunction(createDarknessDepthFunction(scene, options));
