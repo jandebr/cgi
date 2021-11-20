@@ -127,13 +127,13 @@ public class RenderUIResources {
 
 	public static final String backdropToolTipText = "Renders any backdrop drawings";
 
-	public static final String superSamplingLabel = "Super-sampling";
-
-	public static final String superSamplingToolTipText = "Produces a higher quality rendering by interpolating a set of sample points per pixel";
-
 	public static final String depthBlurLabel = "Depth blur";
 
 	public static final String depthBlurToolTipText = "Blurs distant surfaces as if they are out of camera focus";
+
+	public static final String depthDarknessLabel = "Depth darkness";
+
+	public static final String depthDarknessToolTipText = "Darkens distant surfaces as if they are outside light";
 
 	public static final Icon magnifyOriginalIcon = loadIcon(iconFolder + "magnify-s.png");
 
@@ -146,6 +146,18 @@ public class RenderUIResources {
 	public static final Icon magnifyTripleIcon = loadIcon(iconFolder + "magnify-l.png");
 
 	public static final String magnifyTripleToolTipText = "Canvas size 3x3";
+
+	public static final Icon sampleDirectIcon = loadIcon(iconFolder + "sample-direct32.png");
+
+	public static final String sampleDirectToolTipText = "Canvas pixel direct sampling";
+
+	public static final Icon sampleSuperIcon = loadIcon(iconFolder + "sample-super32.png");
+
+	public static final String sampleSuperToolTipText = "Canvas pixel super sampling (2x2 interpolation)";
+
+	public static final Icon sampleUltraIcon = loadIcon(iconFolder + "sample-ultra32.png");
+
+	public static final String sampleUltraToolTipText = "Canvas pixel ultra sampling (3x3 interpolation)";
 
 	public static final Icon usageCpuIcon = loadIcon(iconFolder + "cpu16.png");
 

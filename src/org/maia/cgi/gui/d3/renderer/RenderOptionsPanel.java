@@ -17,6 +17,8 @@ import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JToggleButton;
 
+import org.maia.cgi.gui.d3.renderer.RenderOptions.SamplingMode;
+
 @SuppressWarnings("serial")
 public class RenderOptionsPanel extends Box {
 
@@ -28,13 +30,15 @@ public class RenderOptionsPanel extends Box {
 
 	private ButtonGroup magnificationButtonGroup;
 
+	private ButtonGroup samplingButtonGroup;
+
 	private RenderOptionCheckbox shadowsCheckbox;
 
 	private RenderOptionCheckbox backdropCheckbox;
 
-	private RenderOptionCheckbox superSamplingCheckbox;
-
 	private RenderOptionCheckbox depthBlurCheckbox;
+
+	private RenderOptionCheckbox depthDarknessCheckbox;
 
 	private Collection<RenderOptionsPanelObserver> observers;
 
@@ -45,10 +49,11 @@ public class RenderOptionsPanel extends Box {
 	public RenderOptionsPanel(RenderOptions renderOptions) {
 		super(BoxLayout.Y_AXIS);
 		this.magnificationButtonGroup = createMagnificationButtonGroup();
+		this.samplingButtonGroup = createSamplingButtonGroup();
 		this.shadowsCheckbox = createShadowsCheckbox();
 		this.backdropCheckbox = createBackdropCheckbox();
-		this.superSamplingCheckbox = createSuperSamplingCheckbox();
 		this.depthBlurCheckbox = createDepthBlurCheckbox();
+		this.depthDarknessCheckbox = createDepthDarknessCheckbox();
 		this.observers = new Vector<RenderOptionsPanelObserver>();
 		buildUI();
 		updateRenderOptions(renderOptions);
@@ -62,6 +67,14 @@ public class RenderOptionsPanel extends Box {
 		return group;
 	}
 
+	protected ButtonGroup createSamplingButtonGroup() {
+		ButtonGroup group = new ButtonGroup();
+		group.add(new SamplingButton(new DirectSamplingAction()));
+		group.add(new SamplingButton(new SuperSamplingAction()));
+		group.add(new SamplingButton(new UltraSamplingAction()));
+		return group;
+	}
+
 	protected RenderOptionCheckbox createShadowsCheckbox() {
 		return new RenderOptionCheckbox(new ShadowsAction());
 	}
@@ -70,20 +83,22 @@ public class RenderOptionsPanel extends Box {
 		return new RenderOptionCheckbox(new BackdropAction());
 	}
 
-	protected RenderOptionCheckbox createSuperSamplingCheckbox() {
-		return new RenderOptionCheckbox(new SuperSamplingAction());
-	}
-
 	protected RenderOptionCheckbox createDepthBlurCheckbox() {
 		return new RenderOptionCheckbox(new DepthBlurAction());
+	}
+
+	protected RenderOptionCheckbox createDepthDarknessCheckbox() {
+		return new RenderOptionCheckbox(new DepthDarknessAction());
 	}
 
 	protected void buildUI() {
 		add(buildMagnificationButtonPanel());
 		add(Box.createVerticalStrut(16));
+		add(buildSamplingButtonPanel());
+		add(Box.createVerticalStrut(16));
 		add(getShadowsCheckbox());
-		add(getSuperSamplingCheckbox());
 		add(getDepthBlurCheckbox());
+		add(getDepthDarknessCheckbox());
 		add(getBackdropCheckbox());
 	}
 
@@ -97,28 +112,45 @@ public class RenderOptionsPanel extends Box {
 		return box;
 	}
 
+	protected JComponent buildSamplingButtonPanel() {
+		Box box = new Box(BoxLayout.X_AXIS);
+		Enumeration<AbstractButton> buttons = getSamplingButtonGroup().getElements();
+		while (buttons.hasMoreElements()) {
+			box.add(buttons.nextElement());
+		}
+		box.setAlignmentX(0);
+		return box;
+	}
+
 	public void updateRenderOptions(RenderOptions renderOptions) {
 		setRenderOptions(renderOptions);
 		setOriginalRenderWidth(renderOptions.getRenderWidth());
 		setOriginalRenderHeight(renderOptions.getRenderHeight());
 		getMagnificationButtonGroup().getElements().nextElement().setSelected(true); // original size
+		for (Enumeration<AbstractButton> e = getSamplingButtonGroup().getElements(); e.hasMoreElements();) {
+			AbstractButton button = e.nextElement();
+			if (((SamplingAction) button.getAction()).getSamplingMode().equals(renderOptions.getSamplingMode()))
+				button.setSelected(true);
+		}
 		getShadowsCheckbox().setSelected(renderOptions.isShadowsEnabled());
 		getBackdropCheckbox().setSelected(renderOptions.isBackdropEnabled());
-		getSuperSamplingCheckbox().setSelected(renderOptions.isSuperSamplingEnabled());
 		getDepthBlurCheckbox().setSelected(renderOptions.isDepthBlurEnabled());
+		getDepthDarknessCheckbox().setSelected(renderOptions.isDepthDarknessEnabled());
 	}
 
 	@Override
 	public void setEnabled(boolean enabled) {
 		super.setEnabled(enabled);
-		Enumeration<AbstractButton> buttons = getMagnificationButtonGroup().getElements();
-		while (buttons.hasMoreElements()) {
-			buttons.nextElement().setEnabled(enabled);
+		for (Enumeration<AbstractButton> e = getMagnificationButtonGroup().getElements(); e.hasMoreElements();) {
+			e.nextElement().setEnabled(enabled);
+		}
+		for (Enumeration<AbstractButton> e = getSamplingButtonGroup().getElements(); e.hasMoreElements();) {
+			e.nextElement().setEnabled(enabled);
 		}
 		getShadowsCheckbox().setEnabled(enabled);
 		getBackdropCheckbox().setEnabled(enabled);
-		getSuperSamplingCheckbox().setEnabled(enabled);
 		getDepthBlurCheckbox().setEnabled(enabled);
+		getDepthDarknessCheckbox().setEnabled(enabled);
 	}
 
 	void restoreRenderOptionsSize() {
@@ -168,6 +200,10 @@ public class RenderOptionsPanel extends Box {
 		return magnificationButtonGroup;
 	}
 
+	private ButtonGroup getSamplingButtonGroup() {
+		return samplingButtonGroup;
+	}
+
 	private RenderOptionCheckbox getShadowsCheckbox() {
 		return shadowsCheckbox;
 	}
@@ -176,12 +212,12 @@ public class RenderOptionsPanel extends Box {
 		return backdropCheckbox;
 	}
 
-	private RenderOptionCheckbox getSuperSamplingCheckbox() {
-		return superSamplingCheckbox;
-	}
-
 	private RenderOptionCheckbox getDepthBlurCheckbox() {
 		return depthBlurCheckbox;
+	}
+
+	private RenderOptionCheckbox getDepthDarknessCheckbox() {
+		return depthDarknessCheckbox;
 	}
 
 	protected Collection<RenderOptionsPanelObserver> getObservers() {
@@ -238,21 +274,6 @@ public class RenderOptionsPanel extends Box {
 
 	}
 
-	private class SuperSamplingAction extends AbstractAction {
-
-		public SuperSamplingAction() {
-			super(RenderUIResources.superSamplingLabel);
-			putValue(Action.SHORT_DESCRIPTION, RenderUIResources.superSamplingToolTipText);
-		}
-
-		@Override
-		public void actionPerformed(ActionEvent event) {
-			getRenderOptions().setSuperSamplingEnabled(getSuperSamplingCheckbox().isSelected());
-			fireRenderOptionsChangedEvent();
-		}
-
-	}
-
 	private class DepthBlurAction extends AbstractAction {
 
 		public DepthBlurAction() {
@@ -263,6 +284,21 @@ public class RenderOptionsPanel extends Box {
 		@Override
 		public void actionPerformed(ActionEvent event) {
 			getRenderOptions().setDepthBlurEnabled(getDepthBlurCheckbox().isSelected());
+			fireRenderOptionsChangedEvent();
+		}
+
+	}
+
+	private class DepthDarknessAction extends AbstractAction {
+
+		public DepthDarknessAction() {
+			super(RenderUIResources.depthDarknessLabel);
+			putValue(Action.SHORT_DESCRIPTION, RenderUIResources.depthDarknessToolTipText);
+		}
+
+		@Override
+		public void actionPerformed(ActionEvent event) {
+			getRenderOptions().setDepthDarknessEnabled(getDepthDarknessCheckbox().isSelected());
 			fireRenderOptionsChangedEvent();
 		}
 
@@ -343,6 +379,83 @@ public class RenderOptionsPanel extends Box {
 		@Override
 		protected int getMagnificationFactor() {
 			return 3;
+		}
+
+	}
+
+	private static class SamplingButton extends JToggleButton {
+
+		public SamplingButton(SamplingAction action) {
+			super(action);
+			setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEtchedBorder(),
+					BorderFactory.createEmptyBorder(6, 3, 6, 3)));
+			setFocusPainted(false);
+		}
+
+	}
+
+	private abstract class SamplingAction extends AbstractAction {
+
+		protected SamplingAction(String name) {
+			super(name);
+		}
+
+		protected SamplingAction(Icon icon) {
+			super("", icon);
+		}
+
+		@Override
+		public void actionPerformed(ActionEvent event) {
+			getRenderOptions().setSamplingMode(getSamplingMode());
+			fireRenderOptionsChangedEvent();
+		}
+
+		protected abstract SamplingMode getSamplingMode();
+
+		protected void setToolTipText(String text) {
+			putValue(Action.SHORT_DESCRIPTION, text);
+		}
+
+	}
+
+	private class DirectSamplingAction extends SamplingAction {
+
+		public DirectSamplingAction() {
+			super(RenderUIResources.sampleDirectIcon);
+			setToolTipText(RenderUIResources.sampleDirectToolTipText);
+		}
+
+		@Override
+		protected SamplingMode getSamplingMode() {
+			return SamplingMode.DIRECT;
+		}
+
+	}
+
+	private class SuperSamplingAction extends SamplingAction {
+
+		public SuperSamplingAction() {
+			super(RenderUIResources.sampleSuperIcon);
+			setToolTipText(RenderUIResources.sampleSuperToolTipText);
+		}
+
+		@Override
+		protected SamplingMode getSamplingMode() {
+			return SamplingMode.SUPER;
+		}
+
+	}
+
+	private class UltraSamplingAction extends SamplingAction {
+
+		public UltraSamplingAction() {
+			super(RenderUIResources.sampleUltraIcon);
+			setToolTipText(RenderUIResources.sampleUltraToolTipText);
+		}
+
+		@Override
+		protected SamplingMode getSamplingMode() {
+			return SamplingMode.ULTRA;
 		}
 
 	}

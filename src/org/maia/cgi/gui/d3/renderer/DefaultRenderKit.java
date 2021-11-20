@@ -30,10 +30,11 @@ public class DefaultRenderKit implements RenderKit {
 	protected SceneRenderer createRealisticSceneRenderer(Scene scene, RenderOptions options) {
 		scene.getRenderParameters().setShadowsEnabled(options.isShadowsEnabled());
 		scene.getRenderParameters().setBackdropEnabled(options.isBackdropEnabled());
-		int spp = options.isSuperSamplingEnabled() ? 3 : 1; // samples per pixel (in either direction)
+		int sppX = options.getSamplingMode().getSamplesPerPixelX();
+		int sppY = options.getSamplingMode().getSamplesPerPixelY();
 		DepthBlurParameters depthBlur = options.isDepthBlurEnabled() ? scene.getRenderParameters()
 				.getDepthBlurParameters() : null;
-		return new RaytraceRenderer(options.getRenderWidth(), options.getRenderHeight(), spp, spp, depthBlur);
+		return new RaytraceRenderer(options.getRenderWidth(), options.getRenderHeight(), sppX, sppY, depthBlur);
 	}
 
 }

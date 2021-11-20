@@ -223,10 +223,11 @@ public class RenderFrame extends JFrame implements SceneRendererProgressTracker,
 		GridBagLayout layout = new GridBagLayout();
 		GridBagConstraints c = new GridBagConstraints();
 		c.fill = GridBagConstraints.BOTH;
-		c.insets = new Insets(4, 0, 4, 0);
+		c.insets = new Insets(4, 0, 0, 0);
 		c.gridx = 0;
 		c.gridy = 0;
 		layout.setConstraints(getRenderButton(), c);
+		c.insets = new Insets(16, 0, 0, 0);
 		c.gridx = 0;
 		c.gridy = 1;
 		layout.setConstraints(getExportImageButton(), c);

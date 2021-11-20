@@ -6,6 +6,8 @@ public class RenderOptions {
 
 	private RenderMode renderMode;
 
+	private SamplingMode samplingMode;
+
 	private int renderWidth;
 
 	private int renderHeight;
@@ -14,9 +16,9 @@ public class RenderOptions {
 
 	private boolean backdropEnabled;
 
-	private boolean superSamplingEnabled;
-
 	private boolean depthBlurEnabled;
+
+	private boolean depthDarknessEnabled;
 
 	private Color sceneBackgroundColor;
 
@@ -30,12 +32,13 @@ public class RenderOptions {
 	public static RenderOptions createDefaultOptions() {
 		RenderOptions options = new RenderOptions();
 		options.setRenderMode(RenderMode.PROTOTYPE);
+		options.setSamplingMode(SamplingMode.DIRECT);
 		options.setRenderWidth(1280);
 		options.setRenderHeight(720);
 		options.setShadowsEnabled(false);
 		options.setBackdropEnabled(false);
-		options.setSuperSamplingEnabled(false);
 		options.setDepthBlurEnabled(false);
+		options.setDepthDarknessEnabled(false);
 		options.setSceneBackgroundColor(Color.WHITE);
 		options.setWireframeColorNear(Color.BLACK);
 		options.setWireframeColorFar(Color.LIGHT_GRAY);
@@ -52,6 +55,14 @@ public class RenderOptions {
 
 	public void setRenderMode(RenderMode mode) {
 		this.renderMode = mode;
+	}
+
+	public SamplingMode getSamplingMode() {
+		return samplingMode;
+	}
+
+	public void setSamplingMode(SamplingMode samplingMode) {
+		this.samplingMode = samplingMode;
 	}
 
 	public int getRenderWidth() {
@@ -86,20 +97,20 @@ public class RenderOptions {
 		this.backdropEnabled = backdropEnabled;
 	}
 
-	public boolean isSuperSamplingEnabled() {
-		return superSamplingEnabled;
-	}
-
-	public void setSuperSamplingEnabled(boolean enabled) {
-		this.superSamplingEnabled = enabled;
-	}
-
 	public boolean isDepthBlurEnabled() {
 		return depthBlurEnabled;
 	}
 
 	public void setDepthBlurEnabled(boolean enabled) {
 		this.depthBlurEnabled = enabled;
+	}
+
+	public boolean isDepthDarknessEnabled() {
+		return depthDarknessEnabled;
+	}
+
+	public void setDepthDarknessEnabled(boolean depthDarknessEnabled) {
+		this.depthDarknessEnabled = depthDarknessEnabled;
 	}
 
 	public Color getSceneBackgroundColor() {
@@ -133,4 +144,32 @@ public class RenderOptions {
 		REALISTIC;
 
 	}
+
+	public static enum SamplingMode {
+
+		DIRECT(1, 1),
+
+		SUPER(2, 2),
+
+		ULTRA(3, 3);
+
+		private int samplesPerPixelX;
+
+		private int samplesPerPixelY;
+
+		private SamplingMode(int samplesPerPixelX, int samplesPerPixelY) {
+			this.samplesPerPixelX = samplesPerPixelX;
+			this.samplesPerPixelY = samplesPerPixelY;
+		}
+
+		public int getSamplesPerPixelX() {
+			return samplesPerPixelX;
+		}
+
+		public int getSamplesPerPixelY() {
+			return samplesPerPixelY;
+		}
+
+	}
+
 }
