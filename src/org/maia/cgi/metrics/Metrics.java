@@ -30,6 +30,12 @@ public class Metrics {
 
 	private long boundingBoxComputations;
 
+	private long pointInsideSimpleFaceChecks;
+
+	private long surfacePositionToLightSourceTraversals;
+
+	private long surfacePositionToLightSourceObjectEncounters;
+
 	private Metrics() {
 		resetCounters();
 	}
@@ -64,6 +70,12 @@ public class Metrics {
 		builder.append("\tlineWithObjectIntersections: ").append(lineWithObjectIntersections).append("\n");
 		builder.append("\tlineWithObjectHits: ").append(lineWithObjectHits).append("\n");
 		builder.append("\tboundingBoxComputations: ").append(boundingBoxComputations).append("\n");
+		builder.append("\t---\n");
+		builder.append("\tpointInsideSimpleFaceChecks: ").append(pointInsideSimpleFaceChecks).append("\n");
+		builder.append("\tsurfacePositionToLightSourceTraversals: ").append(surfacePositionToLightSourceTraversals)
+				.append("\n");
+		builder.append("\tsurfacePositionToLightSourceObjectEncounters: ")
+				.append(surfacePositionToLightSourceObjectEncounters).append("\n");
 		builder.append("}");
 		return builder.toString();
 	}
@@ -82,6 +94,9 @@ public class Metrics {
 		lineWithObjectIntersections = 0;
 		lineWithObjectHits = 0;
 		boundingBoxComputations = 0;
+		pointInsideSimpleFaceChecks = 0;
+		surfacePositionToLightSourceTraversals = 0;
+		surfacePositionToLightSourceObjectEncounters = 0;
 	}
 
 	public void incrementPointTransformations() {
@@ -136,6 +151,18 @@ public class Metrics {
 		boundingBoxComputations++;
 	}
 
+	public void incrementPointInsideSimpleFaceChecks() {
+		pointInsideSimpleFaceChecks++;
+	}
+
+	public void incrementSurfacePositionToLightSourceTraversals() {
+		surfacePositionToLightSourceTraversals++;
+	}
+
+	public void incrementSurfacePositionToLightSourceObjectEncounters() {
+		surfacePositionToLightSourceObjectEncounters++;
+	}
+
 	public long getPointTransformations() {
 		return pointTransformations;
 	}
@@ -186,6 +213,18 @@ public class Metrics {
 
 	public long getBoundingBoxComputations() {
 		return boundingBoxComputations;
+	}
+
+	public long getPointInsideSimpleFaceChecks() {
+		return pointInsideSimpleFaceChecks;
+	}
+
+	public long getSurfacePositionToLightSourceTraversals() {
+		return surfacePositionToLightSourceTraversals;
+	}
+
+	public long getSurfacePositionToLightSourceObjectEncounters() {
+		return surfacePositionToLightSourceObjectEncounters;
 	}
 
 }

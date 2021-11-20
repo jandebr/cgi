@@ -7,6 +7,7 @@ import java.awt.GridLayout;
 import java.text.NumberFormat;
 
 import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -58,14 +59,11 @@ public class MetricsPanel extends JPanel {
 		JPanel panel = new JPanel(new GridLayout(0, 2, 16, 2));
 		panel.add(buildMetricNameLabel("Render time"));
 		panel.add(buildMetricValueLabel(formatRenderTime(renderTimeMs)));
+		addSpacer(panel);
 		panel.add(buildMetricNameLabel("Point transformations"));
 		panel.add(buildMetricValueLabel(computeMetrics.getPointTransformations()));
 		panel.add(buildMetricNameLabel("Point normalizations"));
 		panel.add(buildMetricValueLabel(computeMetrics.getPointNormalizations()));
-		panel.add(buildMetricNameLabel("Matrix multiplications"));
-		panel.add(buildMetricValueLabel(computeMetrics.getMatrixMultiplications()));
-		panel.add(buildMetricNameLabel("Matrix inversions"));
-		panel.add(buildMetricValueLabel(computeMetrics.getMatrixInversions()));
 		panel.add(buildMetricNameLabel("Vector dot products"));
 		panel.add(buildMetricValueLabel(computeMetrics.getVectorDotProducts()));
 		panel.add(buildMetricNameLabel("Vector cross products"));
@@ -74,6 +72,11 @@ public class MetricsPanel extends JPanel {
 		panel.add(buildMetricValueLabel(computeMetrics.getVectorNormalizations()));
 		panel.add(buildMetricNameLabel("Vector angles"));
 		panel.add(buildMetricValueLabel(computeMetrics.getVectorAnglesInBetween()));
+		panel.add(buildMetricNameLabel("Matrix multiplications"));
+		panel.add(buildMetricValueLabel(computeMetrics.getMatrixMultiplications()));
+		panel.add(buildMetricNameLabel("Matrix inversions"));
+		panel.add(buildMetricValueLabel(computeMetrics.getMatrixInversions()));
+		addSpacer(panel);
 		panel.add(buildMetricNameLabel("Line with line intersections"));
 		panel.add(buildMetricValueLabel(computeMetrics.getLineWithLineIntersections()));
 		panel.add(buildMetricNameLabel("Line with plane intersections"));
@@ -82,13 +85,25 @@ public class MetricsPanel extends JPanel {
 		panel.add(buildMetricValueLabel(computeMetrics.getLineWithObjectIntersections()));
 		panel.add(buildMetricNameLabel("Line with object hits"));
 		panel.add(buildMetricValueLabel(computeMetrics.getLineWithObjectHits()));
+		addSpacer(panel);
 		panel.add(buildMetricNameLabel("Bounding box computations"));
 		panel.add(buildMetricValueLabel(computeMetrics.getBoundingBoxComputations()));
+		panel.add(buildMetricNameLabel("Point inside simple face checks"));
+		panel.add(buildMetricValueLabel(computeMetrics.getPointInsideSimpleFaceChecks()));
+		panel.add(buildMetricNameLabel("Point to light source traversals"));
+		panel.add(buildMetricValueLabel(computeMetrics.getSurfacePositionToLightSourceTraversals()));
+		panel.add(buildMetricNameLabel("Point to light source object encounters"));
+		panel.add(buildMetricValueLabel(computeMetrics.getSurfacePositionToLightSourceObjectEncounters()));
 		JPanel parent = new JPanel(new BorderLayout());
 		parent.add(buildComputeMetricsDescription(), BorderLayout.NORTH);
 		parent.add(panel, BorderLayout.CENTER);
 		parent.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
 		return parent;
+	}
+
+	protected void addSpacer(JPanel panel) {
+		panel.add(Box.createGlue());
+		panel.add(Box.createGlue());
 	}
 
 	protected JLabel buildComputeMetricsDescription() {

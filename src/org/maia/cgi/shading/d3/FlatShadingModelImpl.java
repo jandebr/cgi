@@ -8,6 +8,7 @@ import org.maia.cgi.compose.d3.DepthFunction;
 import org.maia.cgi.geometry.d3.LineSegment3D;
 import org.maia.cgi.geometry.d3.Point3D;
 import org.maia.cgi.geometry.d3.Vector3D;
+import org.maia.cgi.metrics.Metrics;
 import org.maia.cgi.model.d3.light.AmbientLight;
 import org.maia.cgi.model.d3.light.DirectionalLightSource;
 import org.maia.cgi.model.d3.light.LightSource;
@@ -108,9 +109,11 @@ public class FlatShadingModelImpl implements FlatShadingModel {
 
 	protected double getLightTranslucency(LineSegment3D rayFromSurfacePositionToLightSource, Object3D self, Scene scene) {
 		double translucency = 1.0;
+		Metrics.getInstance().incrementSurfacePositionToLightSourceTraversals();
 		Iterator<ObjectSurfacePoint3D> intersectionsWithRay = scene.getSpatialIndex().getObjectIntersections(
 				rayFromSurfacePositionToLightSource, true);
 		while (translucency > 0 && intersectionsWithRay.hasNext()) {
+			Metrics.getInstance().incrementSurfacePositionToLightSourceObjectEncounters();
 			ObjectSurfacePoint3D intersection = intersectionsWithRay.next();
 			double distance = intersection.getPositionInCamera()
 					.distanceTo(rayFromSurfacePositionToLightSource.getP1());

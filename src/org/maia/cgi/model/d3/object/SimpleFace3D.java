@@ -9,6 +9,7 @@ import org.maia.cgi.geometry.d2.Point2D;
 import org.maia.cgi.geometry.d2.Polygon2D;
 import org.maia.cgi.geometry.d3.Point3D;
 import org.maia.cgi.geometry.d3.Vector3D;
+import org.maia.cgi.metrics.Metrics;
 import org.maia.cgi.model.d3.OrthographicProjection;
 import org.maia.cgi.model.d3.camera.Camera;
 import org.maia.cgi.model.d3.scene.Scene;
@@ -76,6 +77,7 @@ public class SimpleFace3D extends PolygonalObject3D {
 	}
 
 	protected boolean containsPointInCameraCoordinates(Point3D positionInCamera, Scene scene) {
+		Metrics.getInstance().incrementPointInsideSimpleFaceChecks();
 		ProjectionState ps = getProjectionState();
 		ps.setScene(scene);
 		return ps.getPolygon().contains(ps.project(positionInCamera)); // inside-test with 2D-projected polygon
