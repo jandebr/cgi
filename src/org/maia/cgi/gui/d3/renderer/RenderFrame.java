@@ -401,6 +401,7 @@ public class RenderFrame extends JFrame implements SceneRendererProgressTracker,
 		getRenderPane().repaint();
 		if (isInRealisticRenderMode()) {
 			clearProgress();
+			System.gc();
 		}
 		if (isInRealisticRenderMode() || !getCameraControlsPanel().isRepeatActivated()) {
 			enableRenderPanel();
