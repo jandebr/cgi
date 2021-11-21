@@ -36,6 +36,7 @@ public abstract class BaseSceneRenderer implements SceneRenderer {
 		for (SceneRendererProgressTracker tracker : getProgressTrackers()) {
 			tracker.renderingCompleted(this, scene);
 		}
+		System.gc();
 	}
 
 	protected abstract void renderImpl(Scene scene, Collection<ViewPort> outputs, RenderOptions options);

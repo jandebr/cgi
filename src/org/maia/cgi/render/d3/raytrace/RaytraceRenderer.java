@@ -14,6 +14,7 @@ import org.maia.cgi.compose.d2.Convolution;
 import org.maia.cgi.compose.d2.ConvolutionMatrix;
 import org.maia.cgi.compose.d3.DepthBlurOperation.DepthBlurOperationProgressTracker;
 import org.maia.cgi.compose.d3.DepthBlurParameters;
+import org.maia.cgi.compose.d3.DepthFunction;
 import org.maia.cgi.geometry.d2.Rectangle2D;
 import org.maia.cgi.geometry.d3.LineSegment3D;
 import org.maia.cgi.geometry.d3.Point3D;
@@ -419,6 +420,7 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 				}
 				color = Compositing.combineColorsByTransparency(colors);
 			}
+			color = applyDarknessByDepth(color, getNearestDepth());
 			return color;
 		}
 
@@ -429,6 +431,17 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 				depth = -intersections.get(0).getPositionInCamera().getZ();
 			}
 			return depth;
+		}
+
+		private Color applyDarknessByDepth(Color color, double depth) {
+			if (getState().getOptions().isDepthDarknessEnabled()) {
+				DepthFunction df = getState().getScene().getDarknessDepthFunction();
+				if (df != null) {
+					double darkness = Math.max(Math.min(df.eval(depth), 1.0), 0);
+					return Compositing.adjustBrightness(color, -darkness);
+				}
+			}
+			return color;
 		}
 
 		private RenderState getState() {
