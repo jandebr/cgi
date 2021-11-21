@@ -114,7 +114,7 @@ public class PolygonalObject3D extends VertexObject3D {
 	protected boolean containsPointOnPlane(Point3D positionInCamera, Scene scene) {
 		boolean contains = false;
 		if (insideBoundingBox(positionInCamera, scene)) {
-			Metrics.getInstance().incrementPointInsideSimpleFaceChecks();
+			Metrics.getInstance().incrementPointInsidePolygonChecks();
 			ProjectionState ps = getProjectionState();
 			ps.setScene(scene);
 			contains = ps.getPolygon().contains(ps.project(positionInCamera)); // inside-test with 2D-projected polygon

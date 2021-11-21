@@ -30,7 +30,7 @@ public class Metrics {
 
 	private long boundingBoxComputations;
 
-	private long pointInsideSimpleFaceChecks;
+	private long pointInsidePolygonChecks;
 
 	private long surfacePositionToLightSourceTraversals;
 
@@ -59,19 +59,20 @@ public class Metrics {
 		builder.append("Metrics {\n");
 		builder.append("\tpointTransformations: ").append(pointTransformations).append("\n");
 		builder.append("\tpointNormalizations: ").append(pointNormalizations).append("\n");
-		builder.append("\tmatrixMultiplications: ").append(matrixMultiplications).append("\n");
-		builder.append("\tmatrixInversions: ").append(matrixInversions).append("\n");
 		builder.append("\tvectorDotProducts: ").append(vectorDotProducts).append("\n");
 		builder.append("\tvectorCrossProducts: ").append(vectorCrossProducts).append("\n");
 		builder.append("\tvectorNormalizations: ").append(vectorNormalizations).append("\n");
 		builder.append("\tvectorAnglesInBetween: ").append(vectorAnglesInBetween).append("\n");
-		builder.append("\tlineWithPlaneIntersections: ").append(lineWithPlaneIntersections).append("\n");
+		builder.append("\tmatrixMultiplications: ").append(matrixMultiplications).append("\n");
+		builder.append("\tmatrixInversions: ").append(matrixInversions).append("\n");
+		builder.append("\t---\n");
 		builder.append("\tlineWithLineIntersections: ").append(lineWithLineIntersections).append("\n");
+		builder.append("\tlineWithPlaneIntersections: ").append(lineWithPlaneIntersections).append("\n");
 		builder.append("\tlineWithObjectIntersections: ").append(lineWithObjectIntersections).append("\n");
 		builder.append("\tlineWithObjectHits: ").append(lineWithObjectHits).append("\n");
-		builder.append("\tboundingBoxComputations: ").append(boundingBoxComputations).append("\n");
 		builder.append("\t---\n");
-		builder.append("\tpointInsideSimpleFaceChecks: ").append(pointInsideSimpleFaceChecks).append("\n");
+		builder.append("\tboundingBoxComputations: ").append(boundingBoxComputations).append("\n");
+		builder.append("\tpointInsidePolygonChecks: ").append(pointInsidePolygonChecks).append("\n");
 		builder.append("\tsurfacePositionToLightSourceTraversals: ").append(surfacePositionToLightSourceTraversals)
 				.append("\n");
 		builder.append("\tsurfacePositionToLightSourceObjectEncounters: ")
@@ -94,7 +95,7 @@ public class Metrics {
 		lineWithObjectIntersections = 0;
 		lineWithObjectHits = 0;
 		boundingBoxComputations = 0;
-		pointInsideSimpleFaceChecks = 0;
+		pointInsidePolygonChecks = 0;
 		surfacePositionToLightSourceTraversals = 0;
 		surfacePositionToLightSourceObjectEncounters = 0;
 	}
@@ -151,8 +152,8 @@ public class Metrics {
 		boundingBoxComputations++;
 	}
 
-	public void incrementPointInsideSimpleFaceChecks() {
-		pointInsideSimpleFaceChecks++;
+	public void incrementPointInsidePolygonChecks() {
+		pointInsidePolygonChecks++;
 	}
 
 	public void incrementSurfacePositionToLightSourceTraversals() {
@@ -215,8 +216,8 @@ public class Metrics {
 		return boundingBoxComputations;
 	}
 
-	public long getPointInsideSimpleFaceChecks() {
-		return pointInsideSimpleFaceChecks;
+	public long getPointInsidePolygonChecks() {
+		return pointInsidePolygonChecks;
 	}
 
 	public long getSurfacePositionToLightSourceTraversals() {

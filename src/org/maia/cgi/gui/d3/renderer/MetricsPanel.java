@@ -88,8 +88,8 @@ public class MetricsPanel extends JPanel {
 		addSpacer(panel);
 		panel.add(buildMetricNameLabel("Bounding box computations"));
 		panel.add(buildMetricValueLabel(computeMetrics.getBoundingBoxComputations()));
-		panel.add(buildMetricNameLabel("Point inside simple face checks"));
-		panel.add(buildMetricValueLabel(computeMetrics.getPointInsideSimpleFaceChecks()));
+		panel.add(buildMetricNameLabel("Point inside polygon checks"));
+		panel.add(buildMetricValueLabel(computeMetrics.getPointInsidePolygonChecks()));
 		panel.add(buildMetricNameLabel("Point to light source traversals"));
 		panel.add(buildMetricValueLabel(computeMetrics.getSurfacePositionToLightSourceTraversals()));
 		panel.add(buildMetricNameLabel("Point to light source object encounters"));
