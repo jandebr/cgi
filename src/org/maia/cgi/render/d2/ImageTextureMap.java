@@ -1,4 +1,4 @@
-package org.maia.cgi.shading.d2;
+package org.maia.cgi.render.d2;
 
 import java.awt.Color;
 import java.awt.image.BufferedImage;

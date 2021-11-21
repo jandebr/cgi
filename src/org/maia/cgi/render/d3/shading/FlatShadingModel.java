@@ -1,4 +1,4 @@
-package org.maia.cgi.shading.d3;
+package org.maia.cgi.render.d3.shading;
 
 import org.maia.cgi.model.d3.object.ObjectSurfacePoint3D;
 import org.maia.cgi.model.d3.scene.Scene;

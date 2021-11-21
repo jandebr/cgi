@@ -37,9 +37,9 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+import org.maia.cgi.Metrics;
 import org.maia.cgi.gui.GradientButton;
 import org.maia.cgi.gui.d3.renderer.RenderOptionsPanel.RenderOptionsPanelObserver;
-import org.maia.cgi.metrics.Metrics;
 import org.maia.cgi.model.d3.camera.Camera;
 import org.maia.cgi.model.d3.camera.CameraObserver;
 import org.maia.cgi.model.d3.scene.Scene;

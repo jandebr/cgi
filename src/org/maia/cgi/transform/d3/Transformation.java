@@ -1,8 +1,8 @@
 package org.maia.cgi.transform.d3;
 
+import org.maia.cgi.Metrics;
 import org.maia.cgi.geometry.d3.Point3D;
 import org.maia.cgi.geometry.d3.Vector3D;
-import org.maia.cgi.metrics.Metrics;
 import org.maia.cgi.model.d3.OrthographicProjection;
 
 public class Transformation {

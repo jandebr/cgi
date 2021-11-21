@@ -1,4 +1,4 @@
-package org.maia.cgi.metrics;
+package org.maia.cgi;
 
 public class Metrics {
 

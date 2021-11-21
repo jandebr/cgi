@@ -13,7 +13,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 
-import org.maia.cgi.metrics.Metrics;
+import org.maia.cgi.Metrics;
 import org.maia.cgi.model.d3.scene.SceneUtils.ModelMetrics;
 
 @SuppressWarnings("serial")

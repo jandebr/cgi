@@ -1,14 +1,14 @@
-package org.maia.cgi.shading.d3;
+package org.maia.cgi.render.d3.shading;
 
 import java.awt.Color;
 import java.util.Iterator;
 
+import org.maia.cgi.Metrics;
 import org.maia.cgi.compose.Compositing;
 import org.maia.cgi.compose.d3.DepthFunction;
 import org.maia.cgi.geometry.d3.LineSegment3D;
 import org.maia.cgi.geometry.d3.Point3D;
 import org.maia.cgi.geometry.d3.Vector3D;
-import org.maia.cgi.metrics.Metrics;
 import org.maia.cgi.model.d3.light.AmbientLight;
 import org.maia.cgi.model.d3.light.DirectionalLightSource;
 import org.maia.cgi.model.d3.light.LightSource;

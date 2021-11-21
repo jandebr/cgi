@@ -2,7 +2,7 @@ package org.maia.cgi.geometry.d3;
 
 import java.text.NumberFormat;
 
-import org.maia.cgi.metrics.Metrics;
+import org.maia.cgi.Metrics;
 
 public class Vector3D {
 

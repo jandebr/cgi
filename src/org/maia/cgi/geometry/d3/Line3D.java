@@ -1,6 +1,6 @@
 package org.maia.cgi.geometry.d3;
 
-import org.maia.cgi.metrics.Metrics;
+import org.maia.cgi.Metrics;
 
 public class Line3D {
 

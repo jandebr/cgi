@@ -3,8 +3,8 @@ package org.maia.cgi.transform.d3;
 import java.util.List;
 import java.util.Vector;
 
+import org.maia.cgi.Metrics;
 import org.maia.cgi.geometry.d3.Point3D;
-import org.maia.cgi.metrics.Metrics;
 
 /**
  * A 3D transformation matrix.

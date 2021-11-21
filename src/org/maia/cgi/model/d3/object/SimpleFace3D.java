@@ -7,7 +7,7 @@ import java.util.List;
 import org.maia.cgi.geometry.d3.Point3D;
 import org.maia.cgi.model.d3.scene.Scene;
 import org.maia.cgi.render.d3.RenderOptions;
-import org.maia.cgi.shading.d3.FlatShadingModel;
+import org.maia.cgi.render.d3.shading.FlatShadingModel;
 
 /**
  * A <em>simple face</em> being a finite area in a plane enclosed by a convex polygon

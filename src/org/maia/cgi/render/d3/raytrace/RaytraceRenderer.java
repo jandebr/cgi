@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Vector;
 
+import org.maia.cgi.Metrics;
 import org.maia.cgi.compose.Compositing;
 import org.maia.cgi.compose.d2.Convolution;
 import org.maia.cgi.compose.d2.ConvolutionMatrix;
@@ -16,18 +17,17 @@ import org.maia.cgi.compose.d3.DepthBlurParameters;
 import org.maia.cgi.geometry.d2.Rectangle2D;
 import org.maia.cgi.geometry.d3.LineSegment3D;
 import org.maia.cgi.geometry.d3.Point3D;
-import org.maia.cgi.metrics.Metrics;
 import org.maia.cgi.model.d3.camera.ViewVolume;
 import org.maia.cgi.model.d3.object.ObjectSurfacePoint3D;
 import org.maia.cgi.model.d3.object.ObjectSurfacePoint3DImpl;
 import org.maia.cgi.model.d3.object.RaytraceableObject3D;
 import org.maia.cgi.model.d3.scene.Scene;
 import org.maia.cgi.model.d3.scene.SceneUtils;
+import org.maia.cgi.render.d2.TextureMapRegistry;
 import org.maia.cgi.render.d3.BaseSceneRenderer;
 import org.maia.cgi.render.d3.RenderOptions;
 import org.maia.cgi.render.d3.view.ColorDepthBuffer;
 import org.maia.cgi.render.d3.view.ViewPort;
-import org.maia.cgi.shading.d2.TextureMapRegistry;
 
 public class RaytraceRenderer extends BaseSceneRenderer {
 

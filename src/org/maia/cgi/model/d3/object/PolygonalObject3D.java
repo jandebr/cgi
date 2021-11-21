@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
+import org.maia.cgi.Metrics;
 import org.maia.cgi.geometry.d2.Point2D;
 import org.maia.cgi.geometry.d2.Polygon2D;
 import org.maia.cgi.geometry.d3.Box3D;
@@ -15,7 +16,6 @@ import org.maia.cgi.geometry.d3.LineSegment3D;
 import org.maia.cgi.geometry.d3.Plane3D;
 import org.maia.cgi.geometry.d3.Point3D;
 import org.maia.cgi.geometry.d3.Vector3D;
-import org.maia.cgi.metrics.Metrics;
 import org.maia.cgi.model.d3.CoordinateFrame;
 import org.maia.cgi.model.d3.OrthographicProjection;
 import org.maia.cgi.model.d3.camera.Camera;

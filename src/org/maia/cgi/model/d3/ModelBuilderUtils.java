@@ -14,7 +14,7 @@ import org.maia.cgi.model.d3.object.BaseObject3D;
 import org.maia.cgi.model.d3.object.MultipartObject3D;
 import org.maia.cgi.model.d3.object.PolygonalObject3D;
 import org.maia.cgi.model.d3.object.SimpleFace3D;
-import org.maia.cgi.shading.d3.FlatShadingModel;
+import org.maia.cgi.render.d3.shading.FlatShadingModel;
 
 public class ModelBuilderUtils {
 
