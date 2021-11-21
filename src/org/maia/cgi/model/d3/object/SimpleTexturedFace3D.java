@@ -96,26 +96,20 @@ public class SimpleTexturedFace3D extends SimpleFace3D {
 	}
 
 	@Override
-	protected ObjectSurfacePoint3D sampleSurfacePoint(Point3D positionInCamera, Scene scene, RenderOptions options,
-			boolean applyShading) {
-		ObjectSurfacePoint3D surfacePoint = super.sampleSurfacePoint(positionInCamera, scene, options, applyShading);
-		if (surfacePoint != null) {
-			if (applyShading) {
-				applyLuminance(surfacePoint, scene);
-			}
-			applyTransparency(surfacePoint, scene);
-		}
-		return surfacePoint;
-	}
-
-	@Override
-	protected boolean containsPointInCameraCoordinates(Point3D positionInCamera, Scene scene) {
-		if (!super.containsPointInCameraCoordinates(positionInCamera, scene))
+	protected boolean containsPointOnPlane(Point3D positionInCamera, Scene scene) {
+		if (!super.containsPointOnPlane(positionInCamera, scene))
 			return false;
 		if (getPictureMask() == null)
 			return true;
 		Point3D picturePosition = fromCameraToPictureCoordinates(positionInCamera, scene.getCamera());
 		return !getPictureMask().isMasked(picturePosition.getX(), picturePosition.getZ());
+	}
+
+	@Override
+	protected void colorSurfacePointHitByRay(ObjectSurfacePoint3D surfacePoint, Scene scene, RenderOptions options,
+			boolean applyShading) {
+		super.colorSurfacePointHitByRay(surfacePoint, scene, options, applyShading);
+		applyTransparency(surfacePoint, scene);
 	}
 
 	@Override
@@ -129,7 +123,13 @@ public class SimpleTexturedFace3D extends SimpleFace3D {
 		}
 	}
 
-	private void applyLuminance(ObjectSurfacePoint3D surfacePoint, Scene scene) {
+	@Override
+	protected void applySurfacePointShading(ObjectSurfacePoint3D surfacePoint, Scene scene, RenderOptions options) {
+		super.applySurfacePointShading(surfacePoint, scene, options);
+		applyLuminance(surfacePoint, scene);
+	}
+
+	protected void applyLuminance(ObjectSurfacePoint3D surfacePoint, Scene scene) {
 		double luminance = sampleLuminance(surfacePoint, scene);
 		if (!Double.isNaN(luminance)) {
 			surfacePoint.setColor(Compositing.adjustBrightness(surfacePoint.getColor(), luminance));
@@ -147,7 +147,7 @@ public class SimpleTexturedFace3D extends SimpleFace3D {
 		return Double.NaN;
 	}
 
-	private void applyTransparency(ObjectSurfacePoint3D surfacePoint, Scene scene) {
+	protected void applyTransparency(ObjectSurfacePoint3D surfacePoint, Scene scene) {
 		double transparency = sampleTransparency(surfacePoint, scene);
 		if (!Double.isNaN(transparency)) {
 			surfacePoint.setColor(Compositing.setTransparency(surfacePoint.getColor(), transparency));
