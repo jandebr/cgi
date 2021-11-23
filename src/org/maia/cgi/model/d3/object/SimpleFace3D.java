@@ -58,7 +58,7 @@ public class SimpleFace3D extends PolygonalObject3D {
 	}
 
 	protected boolean isFrontFacingInCamera(Scene scene) {
-		return getPlaneInCameraCoordinates(scene.getCamera()).getNormalUnitVector().getZ() >= 0;
+		return getPlaneInCameraCoordinates(scene.getCamera()).getNormalUnitVector().getZ() <= 0;
 	}
 
 	@Override
