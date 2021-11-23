@@ -23,6 +23,28 @@ public class Line2D {
 		return builder.toString();
 	}
 
+	public boolean contains(Point2D point) {
+		double x = point.getX();
+		double y = point.getY();
+		double x1 = getP1().getX();
+		double x2 = getP2().getX();
+		double y1 = getP1().getY();
+		double y2 = getP2().getY();
+		if (x1 == x2) {
+			// vertical line
+			return x == x1 && y >= Math.min(y1, y2) && y <= Math.max(y1, y2);
+		} else if (y1 == y2) {
+			// horizontal line
+			return y == y1 && x >= Math.min(x1, x2) && x <= Math.max(x1, x2);
+		} else {
+			// sloped line
+			if ((x - x1) * (y2 - y1) != (y - y1) * (x2 - x1))
+				return false;
+			double r = (x - x1) / (x2 - x1);
+			return containsPointAtRelativePosition(r);
+		}
+	}
+
 	public Point2D intersect(Line2D other) {
 		Point2D result = null;
 		Metrics.getInstance().incrementLineWithLineIntersections();
