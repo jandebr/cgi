@@ -71,29 +71,30 @@ public class MultipartObject3D<T extends ComposableObject3D> extends BaseObject3
 	}
 
 	@Override
-	public void intersectWithRay(LineSegment3D ray, Scene scene, Collection<ObjectSurfacePoint3D> intersections,
+	public void intersectWithEyeRay(LineSegment3D ray, Scene scene, Collection<ObjectSurfacePoint3D> intersections,
 			RenderOptions options) {
 		for (Iterator<T> it = getParts().iterator(); it.hasNext();) {
 			Object3D part = it.next();
 			if (part.isRaytraceable()) {
-				part.asRaytraceableObject().intersectWithRay(ray, scene, intersections, options);
+				part.asRaytraceableObject().intersectWithEyeRay(ray, scene, intersections, options);
 			}
 		}
 	}
 
 	@Override
-	public void intersectWithRayNoShading(LineSegment3D ray, Scene scene, Collection<ObjectSurfacePoint3D> intersections) {
+	public void intersectWithLightRay(LineSegment3D ray, Scene scene, Collection<ObjectSurfacePoint3D> intersections) {
 		for (Iterator<T> it = getParts().iterator(); it.hasNext();) {
 			Object3D part = it.next();
 			if (part.isRaytraceable()) {
-				part.asRaytraceableObject().intersectWithRayNoShading(ray, scene, intersections);
+				part.asRaytraceableObject().intersectWithLightRay(ray, scene, intersections);
 			}
 		}
 	}
 
 	@Override
 	protected void intersectSelfWithRayImpl(LineSegment3D ray, Scene scene,
-			Collection<ObjectSurfacePoint3D> intersections, RenderOptions options, boolean applyShading) {
+			Collection<ObjectSurfacePoint3D> intersections, RenderOptions options, boolean applyShading,
+			boolean rayFromEye) {
 		// nothing to do, intersections only apply to parts
 	}
 

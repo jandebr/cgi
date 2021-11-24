@@ -286,20 +286,20 @@ public abstract class BaseObject3D implements BoundedObject3D, ComposableObject3
 	protected abstract Box3D deriveBoundingBox(CoordinateFrame cframe, Camera camera);
 
 	@Override
-	public void intersectWithRay(LineSegment3D ray, Scene scene, Collection<ObjectSurfacePoint3D> intersections,
+	public void intersectWithEyeRay(LineSegment3D ray, Scene scene, Collection<ObjectSurfacePoint3D> intersections,
 			RenderOptions options) {
-		intersectSelfWithRay(ray, scene, intersections, options, true);
+		intersectSelfWithRay(ray, scene, intersections, options, true, true);
 	}
 
 	@Override
-	public void intersectWithRayNoShading(LineSegment3D ray, Scene scene, Collection<ObjectSurfacePoint3D> intersections) {
-		intersectSelfWithRay(ray, scene, intersections, null, false);
+	public void intersectWithLightRay(LineSegment3D ray, Scene scene, Collection<ObjectSurfacePoint3D> intersections) {
+		intersectSelfWithRay(ray, scene, intersections, null, false, false);
 	}
 
 	private void intersectSelfWithRay(LineSegment3D ray, Scene scene, Collection<ObjectSurfacePoint3D> intersections,
-			RenderOptions options, boolean applyShading) {
+			RenderOptions options, boolean applyShading, boolean rayFromEye) {
 		int n = intersections.size();
-		intersectSelfWithRayImpl(ray, scene, intersections, options, applyShading);
+		intersectSelfWithRayImpl(ray, scene, intersections, options, applyShading, rayFromEye);
 		Metrics.getInstance().incrementLineWithObjectIntersections();
 		if (intersections.size() > n) {
 			Metrics.getInstance().incrementLineWithObjectHits();
@@ -307,6 +307,7 @@ public abstract class BaseObject3D implements BoundedObject3D, ComposableObject3
 	}
 
 	protected abstract void intersectSelfWithRayImpl(LineSegment3D ray, Scene scene,
-			Collection<ObjectSurfacePoint3D> intersections, RenderOptions options, boolean applyShading);
+			Collection<ObjectSurfacePoint3D> intersections, RenderOptions options, boolean applyShading,
+			boolean rayFromEye);
 
 }

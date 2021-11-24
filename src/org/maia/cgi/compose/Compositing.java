@@ -63,6 +63,14 @@ public class Compositing {
 		return new Color(rgba, true);
 	}
 
+	public static boolean isFullyTransparent(Color color) {
+		return color.getAlpha() == 0;
+	}
+
+	public static boolean isFullyOpaque(Color color) {
+		return color.getAlpha() == 255;
+	}
+
 	public static double getTransparency(Color color) {
 		return 1.0 - color.getAlpha() / 255.0;
 	}
@@ -86,7 +94,7 @@ public class Compositing {
 	}
 
 	public static Color combineColorsByTransparency(Color frontColor, Color backColor) {
-		if (frontColor.getAlpha() == 255)
+		if (isFullyOpaque(frontColor))
 			return frontColor;
 		double alpha = frontColor.getAlpha() / 255.0;
 		double beta = 1.0 - alpha;

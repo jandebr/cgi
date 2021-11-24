@@ -21,6 +21,8 @@ public class Polygon2D {
 
 	private List<LineSegment2D> edges;
 
+	private VerticesOrder order;
+
 	private Point2D centroid;
 
 	public Polygon2D(Point2D... vertices) {
@@ -51,16 +53,6 @@ public class Polygon2D {
 			}
 			return true;
 		}
-	}
-
-	private boolean containsAlternativeImpl(Point2D point) {
-		LineSegment2D line = new LineSegment2D(point, getCentroid());
-		for (LineSegment2D edge : getEdges()) {
-			Point2D p = line.intersect(edge);
-			if (p != null && !p.equals(point))
-				return false;
-		}
-		return true;
 	}
 
 	public List<LineSegment2D> getEdges() {
@@ -105,6 +97,13 @@ public class Polygon2D {
 	}
 
 	public VerticesOrder getVerticesOrder() {
+		if (order == null) {
+			order = deriveVerticesOrder();
+		}
+		return order;
+	}
+
+	private VerticesOrder deriveVerticesOrder() {
 		Point2D p0 = getVertices().get(0);
 		Point2D p1 = getVertices().get(1);
 		Point2D p2 = getVertices().get(2);

@@ -8,9 +8,9 @@ import org.maia.cgi.render.d3.RenderOptions;
 
 public interface RaytraceableObject3D extends Object3D {
 
-	void intersectWithRay(LineSegment3D ray, Scene scene, Collection<ObjectSurfacePoint3D> intersections,
+	void intersectWithEyeRay(LineSegment3D ray, Scene scene, Collection<ObjectSurfacePoint3D> intersections,
 			RenderOptions options);
 
-	void intersectWithRayNoShading(LineSegment3D ray, Scene scene, Collection<ObjectSurfacePoint3D> intersections);
+	void intersectWithLightRay(LineSegment3D ray, Scene scene, Collection<ObjectSurfacePoint3D> intersections);
 
 }

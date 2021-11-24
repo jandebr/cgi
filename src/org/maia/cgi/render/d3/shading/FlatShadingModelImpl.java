@@ -87,7 +87,8 @@ public class FlatShadingModelImpl implements FlatShadingModel {
 				}
 				if (brightness > 0) {
 					Vector3D normal = object.getPlaneInCameraCoordinates(scene.getCamera()).getNormalUnitVector();
-					brightness *= Math.pow(Math.abs(ray.getDirection().getAngleBetween(normal) / Math.PI * 2.0 - 1.0),
+					brightness *= Math.pow(
+							Math.abs(ray.getUnitDirection().getAngleBetweenUnitVectors(normal) / Math.PI * 2.0 - 1.0),
 							getLightGlossFactor());
 					factor = brightness * 2.0 - 1.0;
 				}
@@ -117,9 +118,9 @@ public class FlatShadingModelImpl implements FlatShadingModel {
 		while (translucency > 0 && intersectionsWithRay.hasNext()) {
 			Metrics.getInstance().incrementSurfacePositionToLightSourceObjectEncounters();
 			ObjectSurfacePoint3D intersection = intersectionsWithRay.next();
-			double distance = intersection.getPositionInCamera()
-					.distanceTo(rayFromSurfacePositionToLightSource.getP1());
-			if (intersection.getObject() != self && distance >= APPROXIMATE_ZERO) {
+			double squareDistance = intersection.getPositionInCamera().squareDistanceTo(
+					rayFromSurfacePositionToLightSource.getP1());
+			if (intersection.getObject() != self && squareDistance >= APPROXIMATE_ZERO) {
 				translucency *= Compositing.getTransparency(intersection.getColor());
 			}
 		}

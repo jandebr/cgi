@@ -124,10 +124,14 @@ public class Point3D {
 	}
 
 	public double distanceTo(Point3D other) {
+		return Math.sqrt(squareDistanceTo(other));
+	}
+
+	public double squareDistanceTo(Point3D other) {
 		double dx = getX() - other.getX();
 		double dy = getY() - other.getY();
 		double dz = getZ() - other.getZ();
-		return Math.sqrt(dx * dx + dy * dy + dz * dz);
+		return dx * dx + dy * dy + dz * dz;
 	}
 
 	public void normalizeToUnitW() {

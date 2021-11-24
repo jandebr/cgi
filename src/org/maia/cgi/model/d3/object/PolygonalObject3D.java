@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Vector;
 
 import org.maia.cgi.Metrics;
+import org.maia.cgi.compose.Compositing;
 import org.maia.cgi.geometry.d2.Point2D;
 import org.maia.cgi.geometry.d2.Polygon2D;
 import org.maia.cgi.geometry.d3.Box3D;
@@ -90,8 +91,9 @@ public class PolygonalObject3D extends VertexObject3D {
 
 	@Override
 	protected void intersectSelfWithRayImpl(LineSegment3D ray, Scene scene,
-			Collection<ObjectSurfacePoint3D> intersections, RenderOptions options, boolean applyShading) {
-		ObjectSurfacePoint3D surfacePoint = findSurfacePointHitByRay(ray, scene);
+			Collection<ObjectSurfacePoint3D> intersections, RenderOptions options, boolean applyShading,
+			boolean rayFromEye) {
+		ObjectSurfacePoint3D surfacePoint = findSurfacePointHitByRay(ray, scene, intersections, rayFromEye);
 		if (surfacePoint != null) {
 			colorSurfacePointHitByRay(surfacePoint, scene, options, applyShading);
 			if (surfacePoint.getColor() != null) {
@@ -100,15 +102,42 @@ public class PolygonalObject3D extends VertexObject3D {
 		}
 	}
 
-	protected ObjectSurfacePoint3D findSurfacePointHitByRay(LineSegment3D ray, Scene scene) {
+	protected ObjectSurfacePoint3D findSurfacePointHitByRay(LineSegment3D ray, Scene scene,
+			Collection<ObjectSurfacePoint3D> intersections, boolean rayFromEye) {
 		ObjectSurfacePoint3D surfacePoint = null;
 		Point3D positionInCamera = ray.intersect(getPlaneInCameraCoordinates(scene.getCamera()));
 		if (positionInCamera != null) {
-			if (containsPointOnPlane(positionInCamera, scene)) {
-				surfacePoint = new ObjectSurfacePoint3DImpl(this, positionInCamera, null);
+			// Early out (performance optimalization)
+			boolean earlyOut = false;
+			if (rayFromEye) {
+				ObjectSurfacePoint3D nearestOpaque = getOpaqueIntersectionNearestToEye(intersections);
+				earlyOut = nearestOpaque != null
+						&& nearestOpaque.getPositionInCamera().getZ() > positionInCamera.getZ();
+			}
+			if (!earlyOut) {
+				// Check insideness
+				if (containsPointOnPlane(positionInCamera, scene)) {
+					surfacePoint = new ObjectSurfacePoint3DImpl(this, positionInCamera, null);
+				}
 			}
 		}
 		return surfacePoint;
+	}
+
+	private ObjectSurfacePoint3D getOpaqueIntersectionNearestToEye(Collection<ObjectSurfacePoint3D> intersections) {
+		ObjectSurfacePoint3D nearestOpaque = null;
+		if (!intersections.isEmpty()) {
+			double nearestDepth = 0;
+			for (ObjectSurfacePoint3D intersection : intersections) {
+				double depth = -intersection.getPositionInCamera().getZ();
+				if ((nearestOpaque == null || depth < nearestDepth)
+						&& Compositing.isFullyOpaque(intersection.getColor())) {
+					nearestOpaque = intersection;
+					nearestDepth = depth;
+				}
+			}
+		}
+		return nearestOpaque;
 	}
 
 	protected boolean containsPointOnPlane(Point3D positionInCamera, Scene scene) {

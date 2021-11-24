@@ -358,7 +358,7 @@ public class SceneSpatialIndex {
 						for (Object3D object : binObjects) {
 							if (objects.add(object) && object.isRaytraceable()) {
 								object.asRaytraceableObject()
-										.intersectWithRayNoShading(line, getScene(), intersections);
+										.intersectWithLightRay(line, getScene(), intersections);
 							}
 						}
 					}

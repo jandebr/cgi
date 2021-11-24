@@ -155,6 +155,7 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 
 		private void init() {
 			getObjectIndex().addAllRaytraceableObjectsFromScene(getScene());
+			getObjectIndex().sortBinnedObjectsByIncreasingDepth();
 			int n = getObjectIndex().getBinStatistics().getMaximumObjectsPerBinRow();
 			int c = TextureMapRegistry.getInstance().getCapacity();
 			if (c < n) {
@@ -377,11 +378,11 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 			RenderState state = getState();
 			Scene scene = state.getScene();
 			Point3D pointOnViewPlane = ray.getP1();
-			Collection<RaytraceableObject3D> objects = state.getObjectIndex().getObjects(pointOnViewPlane.getX(),
+			List<RaytraceableObject3D> objects = state.getObjectIndex().getObjects(pointOnViewPlane.getX(),
 					pointOnViewPlane.getY());
 			if (objects != null) {
 				for (RaytraceableObject3D object : objects) {
-					object.intersectWithRay(ray, scene, intersections, state.getOptions());
+					object.intersectWithEyeRay(ray, scene, intersections, state.getOptions());
 				}
 			}
 			// From backdrop, if any

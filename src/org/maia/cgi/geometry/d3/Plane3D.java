@@ -31,7 +31,8 @@ public class Plane3D {
 		if (normalUnitVector == null) {
 			Vector3D va = new Vector3D(getP1(), getP2());
 			Vector3D vb = new Vector3D(getP1(), getP3());
-			normalUnitVector = va.crossProduct(vb).getUnitVector();
+			normalUnitVector = va.crossProduct(vb);
+			normalUnitVector.makeUnitVector();
 		}
 		return normalUnitVector;
 	}

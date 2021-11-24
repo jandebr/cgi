@@ -10,6 +10,8 @@ public class Line3D {
 
 	private Vector3D directionVector;
 
+	private Vector3D unitDirectionVector;
+
 	public Line3D(Point3D p1, Point3D p2) {
 		this.p1 = p1;
 		this.p2 = p2;
@@ -54,6 +56,13 @@ public class Line3D {
 			directionVector = new Vector3D(dx, dy, dz);
 		}
 		return directionVector;
+	}
+
+	public Vector3D getUnitDirection() {
+		if (unitDirectionVector == null) {
+			unitDirectionVector = getDirection().getUnitVector();
+		}
+		return unitDirectionVector;
 	}
 
 	public Point3D intersect(Plane3D plane) {
@@ -114,7 +123,7 @@ public class Line3D {
 	}
 
 	private void invalidateDerivedProperties() {
-		directionVector = null;
+		unitDirectionVector = null;
 	}
 
 }

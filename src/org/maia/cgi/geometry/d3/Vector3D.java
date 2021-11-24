@@ -104,12 +104,22 @@ public class Vector3D {
 	 * @return The angle between this vector and the <code>other</code> vector, in radians between 0.0 and <i>Pi</i>.
 	 */
 	public double getAngleBetween(Vector3D other) {
-		return Math.acos(getAngleCosineBetween(other));
+		Metrics.getInstance().incrementVectorAnglesInBetween();
+		double cosine = dotProduct(other) / (getMagnitude() * other.getMagnitude());
+		return Math.acos(cosine);
 	}
 
-	public double getAngleCosineBetween(Vector3D other) {
+	/**
+	 * Returns the angle between this unit vector and another given unit vector.
+	 * 
+	 * @param otherUnitVector
+	 *            The other vector, assumed to have unit length
+	 * @return The angle between this (assumed unit length) vector and the <code>otherUnitVector</code>, in radians
+	 *         between 0.0 and <i>Pi</i>.
+	 */
+	public double getAngleBetweenUnitVectors(Vector3D otherUnitVector) {
 		Metrics.getInstance().incrementVectorAnglesInBetween();
-		return dotProduct(other) / (getMagnitude() * other.getMagnitude());
+		return Math.acos(dotProduct(otherUnitVector));
 	}
 
 	/**

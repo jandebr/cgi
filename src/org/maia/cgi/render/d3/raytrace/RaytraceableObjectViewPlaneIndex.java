@@ -1,9 +1,13 @@
 package org.maia.cgi.render.d3.raytrace;
 
-import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.Vector;
 
 import org.maia.cgi.geometry.d2.Point2D;
 import org.maia.cgi.geometry.d2.Rectangle2D;
@@ -26,7 +30,7 @@ public class RaytraceableObjectViewPlaneIndex {
 
 	private int yBins;
 
-	private Map<SpatialBin, Collection<RaytraceableObject3D>> index;
+	private Map<SpatialBin, List<RaytraceableObject3D>> index;
 
 	public RaytraceableObjectViewPlaneIndex(Camera camera) {
 		this(camera, 20, 20);
@@ -36,7 +40,7 @@ public class RaytraceableObjectViewPlaneIndex {
 		this.camera = camera;
 		this.xBins = xBins;
 		this.yBins = yBins;
-		this.index = new HashMap<SpatialBin, Collection<RaytraceableObject3D>>(xBins * yBins);
+		this.index = new HashMap<SpatialBin, List<RaytraceableObject3D>>(xBins * yBins);
 	}
 
 	public BinStatistics getBinStatistics() {
@@ -64,8 +68,8 @@ public class RaytraceableObjectViewPlaneIndex {
 		}
 	}
 
-	public Collection<RaytraceableObject3D> getObjects(double xView, double yView) {
-		Collection<RaytraceableObject3D> objects = null;
+	public List<RaytraceableObject3D> getObjects(double xView, double yView) {
+		List<RaytraceableObject3D> objects = null;
 		int xBin = mapToXbin(xView);
 		int yBin = mapToYbin(yView);
 		if (xBin >= 0 && yBin >= 0) {
@@ -74,7 +78,19 @@ public class RaytraceableObjectViewPlaneIndex {
 		return objects;
 	}
 
-	private Collection<RaytraceableObject3D> getObjectsInBin(int xBin, int yBin) {
+	public void sortBinnedObjectsByIncreasingDepth() {
+		Comparator<RaytraceableObject3D> comparator = new RaytraceableObjectSorterByIncreasingDepth();
+		for (int yi = 0; yi < getYbins(); yi++) {
+			for (int xi = 0; xi < getXbins(); xi++) {
+				List<RaytraceableObject3D> objects = getObjectsInBin(xi, yi);
+				if (objects != null) {
+					Collections.sort(objects, comparator);
+				}
+			}
+		}
+	}
+
+	private List<RaytraceableObject3D> getObjectsInBin(int xBin, int yBin) {
 		return getIndex().get(SpatialBin.create(xBin, yBin));
 	}
 
@@ -120,9 +136,9 @@ public class RaytraceableObjectViewPlaneIndex {
 
 	private void indexObject(RaytraceableObject3D object, int xBin, int yBin) {
 		SpatialBin bin = SpatialBin.create(xBin, yBin);
-		Collection<RaytraceableObject3D> collection = getIndex().get(bin);
+		List<RaytraceableObject3D> collection = getIndex().get(bin);
 		if (collection == null) {
-			collection = new HashSet<RaytraceableObject3D>();
+			collection = new Vector<RaytraceableObject3D>();
 			getIndex().put(bin, collection);
 		}
 		collection.add(object);
@@ -166,7 +182,7 @@ public class RaytraceableObjectViewPlaneIndex {
 		return yBins;
 	}
 
-	private Map<SpatialBin, Collection<RaytraceableObject3D>> getIndex() {
+	private Map<SpatialBin, List<RaytraceableObject3D>> getIndex() {
 		return index;
 	}
 
@@ -182,7 +198,7 @@ public class RaytraceableObjectViewPlaneIndex {
 		}
 
 		public static SpatialBin create(int x, int y) {
-			// Idea of caching bin objects proved no rendering time gain
+			// Idea of caching bin objects proved no time performance gain
 			return new SpatialBin(x, y);
 		}
 
@@ -221,6 +237,22 @@ public class RaytraceableObjectViewPlaneIndex {
 
 	}
 
+	private class RaytraceableObjectSorterByIncreasingDepth implements Comparator<RaytraceableObject3D> {
+
+		@Override
+		public int compare(RaytraceableObject3D o1, RaytraceableObject3D o2) {
+			double nearDepth1 = -o1.asBoundedObject().getBoundingBox(CoordinateFrame.CAMERA, getCamera()).getZ2();
+			double nearDepth2 = -o2.asBoundedObject().getBoundingBox(CoordinateFrame.CAMERA, getCamera()).getZ2();
+			if (nearDepth1 < nearDepth2) {
+				return -1;
+			} else if (nearDepth1 > nearDepth2) {
+				return 1;
+			} else {
+				return 0;
+			}
+		}
+	}
+
 	public class BinStatistics {
 
 		public BinStatistics() {
@@ -246,7 +278,7 @@ public class RaytraceableObjectViewPlaneIndex {
 			int empty = 0;
 			for (int y = 0; y < getYbins(); y++) {
 				for (int x = 0; x < getXbins(); x++) {
-					Collection<RaytraceableObject3D> objects = getObjectsInBin(x, y);
+					List<RaytraceableObject3D> objects = getObjectsInBin(x, y);
 					if (objects == null || objects.isEmpty()) {
 						empty++;
 					}
@@ -257,11 +289,11 @@ public class RaytraceableObjectViewPlaneIndex {
 
 		public int getMaximumObjectsPerBinRow() {
 			int max = 0;
-			Collection<RaytraceableObject3D> rowObjects = new HashSet<RaytraceableObject3D>(100);
+			Set<RaytraceableObject3D> rowObjects = new HashSet<RaytraceableObject3D>(100);
 			for (int y = 0; y < getYbins(); y++) {
 				rowObjects.clear();
 				for (int x = 0; x < getXbins(); x++) {
-					Collection<RaytraceableObject3D> objects = getObjectsInBin(x, y);
+					List<RaytraceableObject3D> objects = getObjectsInBin(x, y);
 					if (objects != null) {
 						rowObjects.addAll(objects);
 					}
@@ -275,7 +307,7 @@ public class RaytraceableObjectViewPlaneIndex {
 			int max = 0;
 			for (int y = 0; y < getYbins(); y++) {
 				for (int x = 0; x < getXbins(); x++) {
-					Collection<RaytraceableObject3D> objects = getObjectsInBin(x, y);
+					List<RaytraceableObject3D> objects = getObjectsInBin(x, y);
 					if (objects != null) {
 						max = Math.max(max, objects.size());
 					}
@@ -288,7 +320,7 @@ public class RaytraceableObjectViewPlaneIndex {
 			int sum = 0;
 			for (int y = 0; y < getYbins(); y++) {
 				for (int x = 0; x < getXbins(); x++) {
-					Collection<RaytraceableObject3D> objects = getObjectsInBin(x, y);
+					List<RaytraceableObject3D> objects = getObjectsInBin(x, y);
 					if (objects != null) {
 						sum += objects.size();
 					}
@@ -345,7 +377,7 @@ public class RaytraceableObjectViewPlaneIndex {
 			int[] values = new int[n];
 			for (int y = 0; y < getYbins(); y++) {
 				for (int x = 0; x < getXbins(); x++) {
-					Collection<RaytraceableObject3D> objects = getObjectsInBin(x, y);
+					List<RaytraceableObject3D> objects = getObjectsInBin(x, y);
 					int count = objects != null ? objects.size() : 0;
 					if (count > 0) {
 						// Excluding empty bins
