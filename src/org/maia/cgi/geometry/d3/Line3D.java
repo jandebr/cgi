@@ -60,7 +60,11 @@ public class Line3D {
 
 	public Vector3D getUnitDirection() {
 		if (unitDirectionVector == null) {
-			unitDirectionVector = getDirection().getUnitVector();
+			double dx = getP2().getX() - getP1().getX();
+			double dy = getP2().getY() - getP1().getY();
+			double dz = getP2().getZ() - getP1().getZ();
+			unitDirectionVector = new Vector3D(dx, dy, dz);
+			unitDirectionVector.makeUnitVector();
 		}
 		return unitDirectionVector;
 	}
@@ -123,6 +127,7 @@ public class Line3D {
 	}
 
 	private void invalidateDerivedProperties() {
+		directionVector = null;
 		unitDirectionVector = null;
 	}
 

@@ -32,6 +32,8 @@ public class FlatShadingModelImpl implements FlatShadingModel {
 	 */
 	private double lightGlossFactor;
 
+	private ThreadLocal<LineSegment3D> reusableRay;
+
 	private static final double APPROXIMATE_ZERO = 0.000001;
 
 	public FlatShadingModelImpl() {
@@ -41,6 +43,7 @@ public class FlatShadingModelImpl implements FlatShadingModel {
 	public FlatShadingModelImpl(double lightReflectionFactor, double lightGlossFactor) {
 		this.lightReflectionFactor = lightReflectionFactor;
 		this.lightGlossFactor = lightGlossFactor;
+		this.reusableRay = new ThreadLocal<LineSegment3D>();
 	}
 
 	@Override
@@ -99,13 +102,27 @@ public class FlatShadingModelImpl implements FlatShadingModel {
 
 	private LineSegment3D getRayFromSurfacePositionToLightSource(LightSource lightSource,
 			Point3D surfacePositionInCamera, Scene scene) {
-		LineSegment3D ray = null;
 		if (lightSource instanceof PositionalLightSource) {
-			ray = new LineSegment3D(surfacePositionInCamera,
-					((PositionalLightSource) lightSource).getPositionInCamera(scene));
+			LineSegment3D ray = getReusableRay();
+			ray.setP1(surfacePositionInCamera);
+			ray.setP2(((PositionalLightSource) lightSource).getPositionInCamera(scene));
+			return ray;
 		} else if (lightSource instanceof DirectionalLightSource) {
 			Vector3D v = ((DirectionalLightSource) lightSource).getScaledDirectionOutsideOfScene(scene);
-			ray = new LineSegment3D(surfacePositionInCamera, surfacePositionInCamera.minus(v));
+			LineSegment3D ray = getReusableRay();
+			ray.setP1(surfacePositionInCamera);
+			ray.setP2(surfacePositionInCamera.minus(v));
+			return ray;
+		} else {
+			return null;
+		}
+	}
+
+	private LineSegment3D getReusableRay() {
+		LineSegment3D ray = this.reusableRay.get();
+		if (ray == null) {
+			ray = new LineSegment3D(Point3D.origin(), Point3D.origin());
+			this.reusableRay.set(ray);
 		}
 		return ray;
 	}
