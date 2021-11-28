@@ -90,7 +90,7 @@ public class PolygonalObject3D extends VertexObject3D {
 	}
 
 	@Override
-	protected void intersectSelfWithRayImpl(LineSegment3D ray, Scene scene,
+	protected void intersectSelfWithRay(LineSegment3D ray, Scene scene,
 			Collection<ObjectSurfacePoint3D> intersections, RenderOptions options, boolean applyShading,
 			boolean rayFromEye) {
 		ObjectSurfacePoint3D surfacePoint = findSurfacePointHitByRay(ray, scene, intersections, rayFromEye);

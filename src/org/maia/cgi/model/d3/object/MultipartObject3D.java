@@ -92,7 +92,7 @@ public class MultipartObject3D<T extends ComposableObject3D> extends BaseObject3
 	}
 
 	@Override
-	protected void intersectSelfWithRayImpl(LineSegment3D ray, Scene scene,
+	protected void intersectSelfWithRay(LineSegment3D ray, Scene scene,
 			Collection<ObjectSurfacePoint3D> intersections, RenderOptions options, boolean applyShading,
 			boolean rayFromEye) {
 		// nothing to do, intersections only apply to parts

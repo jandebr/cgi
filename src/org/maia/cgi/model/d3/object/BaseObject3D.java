@@ -288,25 +288,25 @@ public abstract class BaseObject3D implements BoundedObject3D, ComposableObject3
 	@Override
 	public void intersectWithEyeRay(LineSegment3D ray, Scene scene, Collection<ObjectSurfacePoint3D> intersections,
 			RenderOptions options) {
+		int n = intersections.size();
 		intersectSelfWithRay(ray, scene, intersections, options, true, true);
+		Metrics.getInstance().incrementEyeRayWithObjectIntersections();
+		if (intersections.size() > n) {
+			Metrics.getInstance().incrementEyeRayWithObjectHits();
+		}
 	}
 
 	@Override
 	public void intersectWithLightRay(LineSegment3D ray, Scene scene, Collection<ObjectSurfacePoint3D> intersections) {
-		intersectSelfWithRay(ray, scene, intersections, null, false, false);
-	}
-
-	private void intersectSelfWithRay(LineSegment3D ray, Scene scene, Collection<ObjectSurfacePoint3D> intersections,
-			RenderOptions options, boolean applyShading, boolean rayFromEye) {
 		int n = intersections.size();
-		intersectSelfWithRayImpl(ray, scene, intersections, options, applyShading, rayFromEye);
-		Metrics.getInstance().incrementLineWithObjectIntersections();
+		intersectSelfWithRay(ray, scene, intersections, null, false, false);
+		Metrics.getInstance().incrementLightRayWithObjectIntersections();
 		if (intersections.size() > n) {
-			Metrics.getInstance().incrementLineWithObjectHits();
+			Metrics.getInstance().incrementLightRayWithObjectHits();
 		}
 	}
 
-	protected abstract void intersectSelfWithRayImpl(LineSegment3D ray, Scene scene,
+	protected abstract void intersectSelfWithRay(LineSegment3D ray, Scene scene,
 			Collection<ObjectSurfacePoint3D> intersections, RenderOptions options, boolean applyShading,
 			boolean rayFromEye);
 
