@@ -205,7 +205,8 @@ public class ShapeContourTracer {
 		}
 
 		public Polygon2D asPolygon2D() {
-			return new Polygon2D(getContourPoints2D());
+			List<Point2D> vertices = getContourPoints2D();
+			return new Polygon2D(Polygon2D.deriveCentroid(vertices), vertices);
 		}
 
 		public Path3D asPath3D() {

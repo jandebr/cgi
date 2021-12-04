@@ -5,14 +5,14 @@ import java.util.List;
 import java.util.Vector;
 
 /**
- * A convex polygon in XY coordinate space
+ * A simple polygon in XY coordinate space
  *
  * <p>
  * A polygon is made up of <em>n</em> vertices and <em>n</em> edges, connecting the vertices by line segments.
  * </p>
  * <p>
- * The polygon is <em>convex</em>, meaning the angle between adjacent edges must be &lt;= 180 degrees. This implies it
- * is a <em>simple</em> polygon, which does not intersect itself and has no holes.
+ * The polygon is <em>simple</em>, meaning it does not intersect itself and has no holes. A special case is a
+ * <em>convex</em> polygon, as represented by the subclass {@link ConvexPolygon2D}
  * </p>
  */
 public class Polygon2D {
@@ -21,38 +21,27 @@ public class Polygon2D {
 
 	private List<LineSegment2D> edges;
 
-	private VerticesOrder order;
+	private Point2D insidePoint;
 
 	private Point2D centroid;
 
-	public Polygon2D(Point2D... vertices) {
-		this(Arrays.asList(vertices));
+	public Polygon2D(Point2D insidePoint, Point2D... vertices) {
+		this(insidePoint, Arrays.asList(vertices));
 	}
 
-	public Polygon2D(List<Point2D> vertices) {
+	public Polygon2D(Point2D insidePoint, List<Point2D> vertices) {
+		this.insidePoint = insidePoint;
 		this.vertices = vertices;
 	}
 
 	public boolean contains(Point2D point) {
-		VerticesOrder order = getVerticesOrder();
-		if (VerticesOrder.COLLINEAR.equals(order)) {
-			return getCollinearLineSegment().contains(point);
-		} else {
-			boolean cw = VerticesOrder.CLOCKWISE.equals(order);
-			Point2D pi = getVertices().get(0);
-			int n = getVertices().size();
-			for (int i = 1; i <= n; i++) {
-				Point2D pj = getVertices().get(i < n ? i : 0);
-				double qx = point.getX() - pi.getX();
-				double qy = point.getY() - pi.getY();
-				double nx = cw ? pi.getY() - pj.getY() : pj.getY() - pi.getY();
-				double ny = cw ? pj.getX() - pi.getX() : pi.getX() - pj.getX();
-				if (qx * nx + qy * ny > 0)
-					return false;
-				pi = pj;
-			}
-			return true;
+		LineSegment2D line = new LineSegment2D(point, getInsidePoint());
+		for (LineSegment2D edge : getEdges()) {
+			Point2D p = line.intersect(edge);
+			if (p != null && !p.equals(point))
+				return false;
 		}
+		return true;
 	}
 
 	public List<LineSegment2D> getEdges() {
@@ -75,13 +64,12 @@ public class Polygon2D {
 
 	public Point2D getCentroid() {
 		if (centroid == null) {
-			centroid = deriveCentroid();
+			centroid = deriveCentroid(getVertices());
 		}
 		return centroid;
 	}
 
-	private Point2D deriveCentroid() {
-		List<Point2D> vertices = getVertices();
+	public static Point2D deriveCentroid(List<Point2D> vertices) {
 		int n = vertices.size();
 		double x = 0;
 		double y = 0;
@@ -96,64 +84,8 @@ public class Polygon2D {
 		return vertices;
 	}
 
-	public VerticesOrder getVerticesOrder() {
-		if (order == null) {
-			order = deriveVerticesOrder();
-		}
-		return order;
-	}
-
-	private VerticesOrder deriveVerticesOrder() {
-		Point2D p0 = getVertices().get(0);
-		Point2D p1 = getVertices().get(1);
-		Point2D p2 = getVertices().get(2);
-		double a = (p1.getX() - p0.getX()) * (p2.getY() - p0.getY());
-		double b = (p1.getY() - p0.getY()) * (p2.getX() - p0.getX());
-		if (a < b)
-			return VerticesOrder.CLOCKWISE;
-		else if (a > b)
-			return VerticesOrder.COUNTER_CLOCKWISE;
-		else
-			return VerticesOrder.COLLINEAR;
-	}
-
-	private LineSegment2D getCollinearLineSegment() {
-		Point2D p0 = getVertices().get(0);
-		Point2D p1 = getVertices().get(1);
-		Point2D p = null;
-		boolean collinearOnX = p0.getX() == p1.getX();
-		if ((collinearOnX && p0.getY() > p1.getY()) || (!collinearOnX && p0.getX() > p1.getX())) {
-			p = p1;
-			p1 = p0;
-			p0 = p;
-		}
-		for (int i = 2; i < vertices.size(); i++) {
-			p = getVertices().get(i);
-			if (collinearOnX) {
-				if (p.getY() < p0.getY()) {
-					p0 = p;
-				} else if (p.getY() > p1.getY()) {
-					p1 = p;
-				}
-			} else {
-				if (p.getX() < p0.getX()) {
-					p0 = p;
-				} else if (p.getX() > p1.getX()) {
-					p1 = p;
-				}
-			}
-		}
-		return new LineSegment2D(p0, p1);
-	}
-
-	public static enum VerticesOrder {
-
-		CLOCKWISE,
-
-		COUNTER_CLOCKWISE,
-
-		COLLINEAR; // Edge case, not actually a convex polygon anymore
-
+	private Point2D getInsidePoint() {
+		return insidePoint;
 	}
 
 }

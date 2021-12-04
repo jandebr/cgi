@@ -4,6 +4,8 @@ import java.awt.Color;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
 
@@ -11,6 +13,7 @@ import org.maia.cgi.geometry.d3.Box3D;
 import org.maia.cgi.geometry.d3.Point3D;
 import org.maia.cgi.geometry.d3.Vector3D;
 import org.maia.cgi.model.d3.object.BaseObject3D;
+import org.maia.cgi.model.d3.object.ConvexPolygonalObject3D;
 import org.maia.cgi.model.d3.object.MultipartObject3D;
 import org.maia.cgi.model.d3.object.PolygonalObject3D;
 import org.maia.cgi.model.d3.object.SimpleFace3D;
@@ -18,8 +21,13 @@ import org.maia.cgi.render.d3.shading.FlatShadingModel;
 
 public class ModelBuilderUtils {
 
-	public static PolygonalObject3D loadShapeXY(String filePath) {
-		return new PolygonalObject3D(loadVerticesXY(filePath));
+	public static PolygonalObject3D loadShapeXY(String filePath, boolean isConvex) {
+		List<Point3D> vertices = loadVerticesXY(filePath);
+		if (isConvex) {
+			return new ConvexPolygonalObject3D(vertices);
+		} else {
+			return new PolygonalObject3D(vertices);
+		}
 	}
 
 	public static List<Point3D> loadVerticesXY(String filePath) {
@@ -108,7 +116,7 @@ public class ModelBuilderUtils {
 		return (BaseObject3D) buildUnityCube(color, shadingModel).scale(width / 2.0, height / 2.0, depth / 2.0);
 	}
 
-	public static PolygonalObject3D buildRoundedRectangleXY(double width, double height, double cornerRadiusX,
+	public static ConvexPolygonalObject3D buildRoundedRectangleXY(double width, double height, double cornerRadiusX,
 			double cornerRadiusY, double precision) {
 		int nc = 3 + (int) Math.ceil(precision / 0.2);
 		List<Point3D> vertices = new Vector<Point3D>(nc * 4);
@@ -123,7 +131,7 @@ public class ModelBuilderUtils {
 				vertices.add(new Point3D(x, y, 0));
 			}
 		}
-		return new PolygonalObject3D(vertices);
+		return new ConvexPolygonalObject3D(vertices);
 	}
 
 	public static BaseObject3D buildCylinder(double radius, double depth, int vertexCount, Color color,
@@ -138,7 +146,7 @@ public class ModelBuilderUtils {
 		// Base
 		PolygonalObject3D base = buildCircularShapeXY(radius, vertexCount);
 		if (fillBase) {
-			pyramid.addPart(convertToFace(base, color, shadingModel));
+			pyramid.addParts(convertToFaces(base, color, shadingModel));
 		}
 		// Hull
 		List<Point3D> vertices = base.getVerticesInWorldCoordinates();
@@ -184,13 +192,13 @@ public class ModelBuilderUtils {
 		return buildLayeredObject(layers, true, false, color, shadingModel);
 	}
 
-	public static PolygonalObject3D buildCircularShapeXY(double radius, int vertexCount) {
+	public static ConvexPolygonalObject3D buildCircularShapeXY(double radius, int vertexCount) {
 		double angleFrom = 0;
 		double angleTo = 2 * Math.PI * (1.0 - 1.0 / vertexCount);
 		return buildCircularSegmentXY(radius, angleFrom, angleTo, vertexCount);
 	}
 
-	public static PolygonalObject3D buildCircularSegmentXY(double radius, double angleFrom, double angleTo,
+	public static ConvexPolygonalObject3D buildCircularSegmentXY(double radius, double angleFrom, double angleTo,
 			int vertexCount) {
 		List<Point3D> vertices = new Vector<Point3D>(vertexCount);
 		for (int i = 0; i < vertexCount; i++) {
@@ -199,10 +207,10 @@ public class ModelBuilderUtils {
 			double y = radius * Math.sin(radians);
 			vertices.add(new Point3D(x, y, 0));
 		}
-		return new PolygonalObject3D(vertices);
+		return new ConvexPolygonalObject3D(vertices);
 	}
 
-	public static PolygonalObject3D buildSqueezedCircularShapeXY(double radius, double squeezeFactorX,
+	public static ConvexPolygonalObject3D buildSqueezedCircularShapeXY(double radius, double squeezeFactorX,
 			double squeezeFactorY, int vertexCount) {
 		List<Point3D> vertices = new Vector<Point3D>(vertexCount);
 		for (int i = 0; i < vertexCount; i++) {
@@ -213,7 +221,7 @@ public class ModelBuilderUtils {
 			double y = radius * Math.signum(sin) * Math.pow(Math.abs(sin), squeezeFactorY);
 			vertices.add(new Point3D(x, y, 0));
 		}
-		return new PolygonalObject3D(vertices);
+		return new ConvexPolygonalObject3D(vertices);
 	}
 
 	public static BaseObject3D buildExtrusion(PolygonalObject3D shapeXY, double depth, Color color,
@@ -289,8 +297,8 @@ public class ModelBuilderUtils {
 		int lc = layers.size();
 		// Sides
 		if (fillSides) {
-			object.addPart(convertToFace(layers.get(0), color, shadingModel));
-			object.addPart(convertToFace(layers.get(lc - 1), color, shadingModel));
+			object.addParts(convertToFaces(layers.get(0), color, shadingModel));
+			object.addParts(convertToFaces(layers.get(lc - 1), color, shadingModel));
 		}
 		// Surface
 		for (int li = 0; li < lc - 1; li++) {
@@ -313,12 +321,43 @@ public class ModelBuilderUtils {
 		return object;
 	}
 
-	public static SimpleFace3D convertToFace(PolygonalObject3D polygon, Color color, FlatShadingModel shadingModel) {
-		return new SimpleFace3D(color, shadingModel, polygon.getVerticesInWorldCoordinates());
+	public static PolygonalObject3D cloneShape(PolygonalObject3D polygon) {
+		List<Point3D> vertices = polygon.getVerticesInWorldCoordinates();
+		if (polygon instanceof ConvexPolygonalObject3D) {
+			return new ConvexPolygonalObject3D(vertices);
+		} else {
+			return new PolygonalObject3D(vertices);
+		}
 	}
 
-	public static PolygonalObject3D cloneShape(PolygonalObject3D polygon) {
-		return new PolygonalObject3D(polygon.getVerticesInWorldCoordinates());
+	public static Collection<SimpleFace3D> convertToFaces(PolygonalObject3D polygon, Color color,
+			FlatShadingModel shadingModel) {
+		List<Point3D> vertices = polygon.getVerticesInWorldCoordinates();
+		if (polygon instanceof ConvexPolygonalObject3D) {
+			return Collections.singletonList(new SimpleFace3D(color, shadingModel, vertices));
+		} else {
+			Point3D c = deriveCentroid(vertices);
+			int n = vertices.size();
+			Collection<SimpleFace3D> faces = new Vector<SimpleFace3D>(n); // create a 'fan' of triangles
+			for (int i = 0; i < n; i++) {
+				faces.add(new SimpleFace3D(color, shadingModel, vertices.get(i), vertices.get((i + 1) % n), c));
+			}
+			return faces;
+		}
+	}
+
+	public static Point3D deriveCentroid(List<Point3D> vertices) {
+		int n = vertices.size();
+		double x = 0;
+		double y = 0;
+		double z = 0;
+		for (int i = 0; i < n; i++) {
+			Point3D vertex = vertices.get(i);
+			x += vertex.getX();
+			y += vertex.getY();
+			z += vertex.getZ();
+		}
+		return new Point3D(x / n, y / n, z / n);
 	}
 
 }

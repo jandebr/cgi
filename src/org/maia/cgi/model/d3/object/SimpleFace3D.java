@@ -13,10 +13,10 @@ import org.maia.cgi.render.d3.shading.FlatShadingModel;
  * A <em>simple face</em> being a finite area in a plane enclosed by a convex polygon
  * 
  * <p>
- * A <em>simple face</em> is specified by a set of vertices, representing the vertices of the polygon which encloses the
- * face. For that matter it extends the <code>PolygonalObject3D</code> class. The traversal order of the vertices is
- * important. When perceived in clockwise direction the face is front-facing, in counter-clockwise direction the face is
- * back-facing.
+ * A <em>simple face</em> is specified by a set of vertices, representing the vertices of a convex polygon which
+ * encloses the face. For that matter it extends the <code>ConvexPolygonalObject3D</code> class. The traversal order of
+ * the vertices is important. When perceived in clockwise direction the face is front-facing, in counter-clockwise
+ * direction the face is back-facing.
  * </p>
  * <p>
  * A solid color applies to a <em>simple face</em>, although there can be a separate color for the front and back side
@@ -25,7 +25,7 @@ import org.maia.cgi.render.d3.shading.FlatShadingModel;
  * 
  * @see FlatShadingModel
  */
-public class SimpleFace3D extends PolygonalObject3D {
+public class SimpleFace3D extends ConvexPolygonalObject3D {
 
 	private Color frontColor;
 

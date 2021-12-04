@@ -74,6 +74,24 @@ public class Box3D {
 		setZ2(Math.max(getZ2(), point.getZ()));
 	}
 
+	public Box3D getIntersection(Box3D other) {
+		Box3D intersection = null;
+		if (overlaps(other)) {
+			double x1 = Math.max(getX1(), other.getX1());
+			double x2 = Math.min(getX2(), other.getX2());
+			double y1 = Math.max(getY1(), other.getY1());
+			double y2 = Math.min(getY2(), other.getY2());
+			double z1 = Math.max(getZ1(), other.getZ1());
+			double z2 = Math.min(getZ2(), other.getZ2());
+			intersection = new Box3D(x1, x2, y1, y2, z1, z2);
+		}
+		return intersection;
+	}
+
+	public boolean isCollapsed() {
+		return getWidth() == 0 || getHeight() == 0 || getDepth() == 0;
+	}
+
 	public double getWidth() {
 		return getX2() - getX1();
 	}
@@ -101,11 +119,11 @@ public class Box3D {
 	}
 
 	public boolean overlaps(Box3D other) {
-		if (other.getX2() < getX1() || other.getX1() > getX2())
+		if (other.getX2() <= getX1() || other.getX1() >= getX2())
 			return false;
-		if (other.getY2() < getY1() || other.getY1() > getY2())
+		if (other.getY2() <= getY1() || other.getY1() >= getY2())
 			return false;
-		if (other.getZ2() < getZ1() || other.getZ1() > getZ2())
+		if (other.getZ2() <= getZ1() || other.getZ1() >= getZ2())
 			return false;
 		return true;
 	}

@@ -25,7 +25,7 @@ import org.maia.cgi.model.d3.scene.Scene;
 import org.maia.cgi.render.d3.RenderOptions;
 
 /**
- * An object in 3D space that has the geometrical shape of a convex polygon
+ * An object in 3D space that has the geometrical shape of a simple polygon
  *
  * <p>
  * A polygon is made up of <em>n</em> vertices and <em>n</em> edges, connecting the vertices by line segments.
@@ -34,8 +34,7 @@ import org.maia.cgi.render.d3.RenderOptions;
  * The following assumptions hold for a <code>PolygonalObject3D</code>
  * <ul>
  * <li>The vertices all lie in the same plane</li>
- * <li>The polygon is <em>convex</em>, meaning the angle between adjacent edges must be &lt;= 180 degrees. This implies
- * it is a <em>simple</em> polygon, which does not intersect itself and has no holes</li>
+ * <li>The polygon is <em>simple</em>, meaning it does not intersect itself and has no holes</li>
  * </ul>
  * </p>
  */
@@ -55,7 +54,7 @@ public class PolygonalObject3D extends VertexObject3D {
 
 	public PolygonalObject3D(List<Point3D> vertices) {
 		super(vertices, getPolygonEdges(vertices));
-		this.projectionState = new ProjectionState();
+		this.projectionState = createProjectionState();
 	}
 
 	private static List<Edge> getPolygonEdges(List<Point3D> vertices) {
@@ -78,6 +77,10 @@ public class PolygonalObject3D extends VertexObject3D {
 		return edges;
 	}
 
+	protected ProjectionState createProjectionState() {
+		return new ProjectionState();
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(1024);
@@ -90,9 +93,8 @@ public class PolygonalObject3D extends VertexObject3D {
 	}
 
 	@Override
-	protected void intersectSelfWithRay(LineSegment3D ray, Scene scene,
-			Collection<ObjectSurfacePoint3D> intersections, RenderOptions options, boolean applyShading,
-			boolean rayFromEye) {
+	protected void intersectSelfWithRay(LineSegment3D ray, Scene scene, Collection<ObjectSurfacePoint3D> intersections,
+			RenderOptions options, boolean applyShading, boolean rayFromEye) {
 		ObjectSurfacePoint3D surfacePoint = findSurfacePointHitByRay(ray, scene, intersections, rayFromEye);
 		if (surfacePoint != null) {
 			colorSurfacePointHitByRay(surfacePoint, scene, options, applyShading);
@@ -232,7 +234,7 @@ public class PolygonalObject3D extends VertexObject3D {
 		return projectionState;
 	}
 
-	private class ProjectionState {
+	protected class ProjectionState {
 
 		private OrthographicProjection projection;
 
@@ -296,7 +298,12 @@ public class PolygonalObject3D extends VertexObject3D {
 		}
 
 		private Polygon2D derivePolygon() {
-			return new Polygon2D(project(getVerticesInCameraCoordinates(getScene().getCamera())));
+			List<Point2D> vertices = project(getVerticesInCameraCoordinates(getScene().getCamera()));
+			return derivePolygon(vertices);
+		}
+
+		protected Polygon2D derivePolygon(List<Point2D> vertices) {
+			return new Polygon2D(Polygon2D.deriveCentroid(vertices), vertices);
 		}
 
 		public Scene getScene() {
