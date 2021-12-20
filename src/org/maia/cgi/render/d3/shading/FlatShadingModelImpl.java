@@ -131,7 +131,7 @@ public class FlatShadingModelImpl implements FlatShadingModel {
 		double translucency = 1.0;
 		Metrics.getInstance().incrementSurfacePositionToLightSourceTraversals();
 		Iterator<ObjectSurfacePoint3D> intersectionsWithRay = scene.getSpatialIndex().getObjectIntersections(
-				rayFromSurfacePositionToLightSource, true);
+				rayFromSurfacePositionToLightSource);
 		while (translucency > 0 && intersectionsWithRay.hasNext()) {
 			ObjectSurfacePoint3D intersection = intersectionsWithRay.next();
 			double squareDistance = intersection.getPositionInCamera().squareDistanceTo(

@@ -14,6 +14,8 @@ import org.maia.cgi.model.d3.camera.Camera;
 import org.maia.cgi.model.d3.camera.CameraObserver;
 import org.maia.cgi.model.d3.light.LightSource;
 import org.maia.cgi.model.d3.object.Object3D;
+import org.maia.cgi.model.d3.scene.index.SceneSpatialIndex;
+import org.maia.cgi.model.d3.scene.index.SceneSpatialIndexFactory;
 import org.maia.cgi.render.d3.view.ColorDepthBuffer;
 
 public class Scene implements CameraObserver {
@@ -139,7 +141,7 @@ public class Scene implements CameraObserver {
 
 	public SceneSpatialIndex getSpatialIndex() {
 		if (spatialIndex == null) {
-			spatialIndex = SceneSpatialIndex.createIndex(this);
+			spatialIndex = SceneSpatialIndexFactory.getInstance().createIndex(this);
 		}
 		return spatialIndex;
 	}

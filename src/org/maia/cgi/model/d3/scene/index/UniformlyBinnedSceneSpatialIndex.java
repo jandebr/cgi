@@ -1,4 +1,4 @@
-package org.maia.cgi.model.d3.scene;
+package org.maia.cgi.model.d3.scene.index;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -6,19 +6,17 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.Vector;
 
 import org.maia.cgi.geometry.d3.Box3D;
 import org.maia.cgi.geometry.d3.LineSegment3D;
-import org.maia.cgi.model.d3.CoordinateFrame;
-import org.maia.cgi.model.d3.camera.Camera;
+import org.maia.cgi.geometry.d3.Point3D;
 import org.maia.cgi.model.d3.object.Object3D;
 import org.maia.cgi.model.d3.object.ObjectSurfacePoint3D;
+import org.maia.cgi.model.d3.scene.Scene;
 
 /**
- * Spatial index of a Scene's objects in 3D, in camera coordinates
+ * Spatial index of a Scene's objects, derived by uniformly binning in 3D camera coordinates
  * 
  * <p>
  * The spatial index is constructed based on the current positions and orientations of the objects in the scene and the
@@ -26,9 +24,7 @@ import org.maia.cgi.model.d3.object.ObjectSurfacePoint3D;
  * snapshot of that scene.
  * </p>
  */
-public class SceneSpatialIndex {
-
-	private Scene scene;
+public class UniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex {
 
 	private int xBins;
 
@@ -40,44 +36,41 @@ public class SceneSpatialIndex {
 
 	private Box3D firstBinBoundingBox;
 
-	private ThreadLocal<List<ObjectSurfacePoint3D>> reusableIntersectionsList;
-
-	private ThreadLocal<Set<Object3D>> reusableObjectsSet;
-
-	private SceneSpatialIndex(Scene scene, int xBins, int yBins, int zBins) {
-		this.scene = scene;
+	public UniformlyBinnedSceneSpatialIndex(Scene scene, int xBins, int yBins, int zBins) {
+		super(scene);
 		this.xBins = xBins;
 		this.yBins = yBins;
 		this.zBins = zBins;
 		this.index = new HashMap<SpatialBin, Collection<Object3D>>(xBins * yBins);
-		this.reusableIntersectionsList = new ThreadLocal<List<ObjectSurfacePoint3D>>();
-		this.reusableObjectsSet = new ThreadLocal<Set<Object3D>>();
+		addAllObjectsFromScene();
 	}
 
-	public static SceneSpatialIndex createIndex(Scene scene) {
-		SceneSpatialIndex index = new SceneSpatialIndex(scene, 50, 50, 50);
-		index.addAllObjectsFromScene();
-		return index;
+	@Override
+	public void dispose() {
+		getIndex().clear();
 	}
 
+	@Override
 	public BinStatistics getBinStatistics() {
-		return new BinStatistics();
+		return new UniformBinStatistics();
 	}
 
-	public Iterator<ObjectSurfacePoint3D> getObjectIntersections(LineSegment3D line, boolean lineStartsWithinScene) {
-		return new ObjectLineIntersectionsIterator(line, lineStartsWithinScene);
+	@Override
+	public Iterator<ObjectSurfacePoint3D> getObjectIntersections(LineSegment3D line) {
+		boolean lineStartsWithinScene = getSceneBox().contains(line.getP1());
+		return new ObjectLineIntersectionsIteratorImpl(line, lineStartsWithinScene);
 	}
 
 	private void addAllObjectsFromScene() {
 		setFirstBinBoundingBox(deriveFirstBinBoundingBox());
-		for (Object3D object : SceneUtils.getAllIndividualObjectsInScene(getScene())) {
+		for (Object3D object : getSceneObjects()) {
 			addObject(object);
 		}
 	}
 
 	private void addObject(Object3D object) {
 		if (object.isBounded()) {
-			Box3D bbox = object.asBoundedObject().getBoundingBox(CoordinateFrame.CAMERA, getCamera());
+			Box3D bbox = getObjectBox(object);
 			int x1 = mapToXbin(bbox.getX1());
 			int x2 = mapToXbin(bbox.getX2());
 			int y1 = mapToYbin(bbox.getY1());
@@ -132,7 +125,7 @@ public class SceneSpatialIndex {
 	}
 
 	private Box3D deriveFirstBinBoundingBox() {
-		Box3D sceneBox = getScene().getBoundingBox(CoordinateFrame.CAMERA);
+		Box3D sceneBox = getSceneBox();
 		double x = sceneBox.getX1();
 		double y = sceneBox.getY1();
 		double z = sceneBox.getZ1();
@@ -161,14 +154,6 @@ public class SceneSpatialIndex {
 		return getIndex().get(SpatialBin.create(xBin, yBin, zBin));
 	}
 
-	public Scene getScene() {
-		return scene;
-	}
-
-	private Camera getCamera() {
-		return getScene().getCamera();
-	}
-
 	private int getXbins() {
 		return xBins;
 	}
@@ -191,24 +176,6 @@ public class SceneSpatialIndex {
 
 	private void setFirstBinBoundingBox(Box3D boundingBox) {
 		this.firstBinBoundingBox = boundingBox;
-	}
-
-	private List<ObjectSurfacePoint3D> getReusableIntersectionsList() {
-		List<ObjectSurfacePoint3D> list = reusableIntersectionsList.get();
-		if (list == null) {
-			list = new Vector<ObjectSurfacePoint3D>();
-			reusableIntersectionsList.set(list);
-		}
-		return list;
-	}
-
-	private Set<Object3D> getReusableObjectsSet() {
-		Set<Object3D> set = reusableObjectsSet.get();
-		if (set == null) {
-			set = new HashSet<Object3D>(300);
-			reusableObjectsSet.set(set);
-		}
-		return set;
 	}
 
 	private static class SpatialBin {
@@ -266,9 +233,7 @@ public class SceneSpatialIndex {
 
 	}
 
-	private class ObjectLineIntersectionsIterator implements Iterator<ObjectSurfacePoint3D> {
-
-		private LineSegment3D line;
+	private class ObjectLineIntersectionsIteratorImpl extends ObjectLineIntersectionsIterator {
 
 		private boolean lineStartsWithinScene;
 
@@ -284,30 +249,34 @@ public class SceneSpatialIndex {
 
 		private double tx, ty, tz;
 
+		private Iterator<Object3D> currentObjects;
+
 		private boolean proceed;
 
-		public ObjectLineIntersectionsIterator(LineSegment3D line, boolean lineStartsWithinScene) {
-			this.line = line;
+		public ObjectLineIntersectionsIteratorImpl(LineSegment3D line, boolean lineStartsWithinScene) {
+			super(line);
 			this.lineStartsWithinScene = lineStartsWithinScene;
+			Point3D p1 = line.getP1();
+			Point3D p2 = line.getP2();
 			// init X
-			x1 = line.getP1().getX();
-			x2 = line.getP2().getX();
+			x1 = p1.getX();
+			x2 = p2.getX();
 			xd = x2 - x1;
 			xdir = (int) Math.signum(xd);
 			xi = mapToXbin(x1);
 			xn = getXbins() - 1;
 			xin = xi >= 0 && xi <= xn;
 			// init Y
-			y1 = line.getP1().getY();
-			y2 = line.getP2().getY();
+			y1 = p1.getY();
+			y2 = p2.getY();
 			yd = y2 - y1;
 			ydir = (int) Math.signum(yd);
 			yi = mapToYbin(y1);
 			yn = getYbins() - 1;
 			yin = yi >= 0 && yi <= yn;
 			// init Z
-			z1 = line.getP1().getZ();
-			z2 = line.getP2().getZ();
+			z1 = p1.getZ();
+			z2 = p2.getZ();
 			zd = z2 - z1;
 			zdir = (int) Math.signum(zd);
 			zi = mapToZbin(z1);
@@ -319,100 +288,60 @@ public class SceneSpatialIndex {
 			tz = zd != 0 ? (getBinBoundaryZ(zi, zdir) - z1) / zd : Double.MAX_VALUE;
 			// init traversal
 			proceed = !lineStartsWithinScene || (xin && yin && zin);
-			getIntersections().clear();
-			getObjects().clear();
 		}
 
 		@Override
-		public boolean hasNext() {
-			if (getIntersections().isEmpty()) {
-				provisionIntersections();
-				return !getIntersections().isEmpty();
-			} else {
-				return true;
-			}
-		}
-
-		@Override
-		public ObjectSurfacePoint3D next() {
-			if (hasNext()) {
-				return getIntersections().remove(getIntersections().size() - 1);
-			} else {
-				throw new NoSuchElementException();
-			}
-		}
-
-		@Override
-		public void remove() {
-			throw new UnsupportedOperationException();
-		}
-
-		private void provisionIntersections() {
+		protected void provisionIntersections() {
 			// traverse bins along the line to add objects
 			List<ObjectSurfacePoint3D> intersections = getIntersections();
 			Set<Object3D> objects = getObjects();
 			while (proceed && intersections.isEmpty()) {
-				if (xin && yin && zin) {
+				if (currentObjects == null && xin && yin && zin) {
 					Collection<Object3D> binObjects = getObjectsInBin(xi, yi, zi);
-					if (binObjects != null) {
-						for (Object3D object : binObjects) {
-							if (objects.add(object) && object.isRaytraceable()) {
-								object.asRaytraceableObject()
-										.intersectWithLightRay(line, getScene(), intersections);
-							}
-						}
+					if (binObjects != null)
+						currentObjects = binObjects.iterator();
+				}
+				if (currentObjects != null && currentObjects.hasNext()) {
+					Object3D object = currentObjects.next();
+					if (objects.add(object) && object.isRaytraceable()) {
+						object.asRaytraceableObject().intersectWithLightRay(getLine(), getScene(), intersections);
 					}
-				}
-				if (tx <= ty && tx <= tz) {
-					xi += xdir;
-					tx = (getBinBoundaryX(xi, xdir) - x1) / xd;
-					xin = xi >= 0 && xi <= xn;
-					proceed = proceed && (!lineStartsWithinScene || xin);
-				} else if (ty <= tx && ty <= tz) {
-					yi += ydir;
-					ty = (getBinBoundaryY(yi, ydir) - y1) / yd;
-					yin = yi >= 0 && yi <= yn;
-					proceed = proceed && (!lineStartsWithinScene || yin);
 				} else {
-					zi += zdir;
-					tz = (getBinBoundaryZ(zi, zdir) - z1) / zd;
-					zin = zi >= 0 && zi <= zn;
-					proceed = proceed && (!lineStartsWithinScene || zin);
+					currentObjects = null;
+					if (tx <= ty && tx <= tz) {
+						xi += xdir;
+						tx = (getBinBoundaryX(xi, xdir) - x1) / xd;
+						xin = xi >= 0 && xi <= xn;
+						proceed = proceed && (!lineStartsWithinScene || xin);
+					} else if (ty <= tx && ty <= tz) {
+						yi += ydir;
+						ty = (getBinBoundaryY(yi, ydir) - y1) / yd;
+						yin = yi >= 0 && yi <= yn;
+						proceed = proceed && (!lineStartsWithinScene || yin);
+					} else {
+						zi += zdir;
+						tz = (getBinBoundaryZ(zi, zdir) - z1) / zd;
+						zin = zi >= 0 && zi <= zn;
+						proceed = proceed && (!lineStartsWithinScene || zin);
+					}
+					proceed = proceed && (tx <= 1.0 || ty <= 1.0 || tz <= 1.0);
 				}
-				proceed = proceed && (tx <= 1.0 || ty <= 1.0 || tz <= 1.0);
 			}
-		}
-
-		private List<ObjectSurfacePoint3D> getIntersections() {
-			return getReusableIntersectionsList();
-		}
-
-		private Set<Object3D> getObjects() {
-			return getReusableObjectsSet();
 		}
 
 	}
 
-	public class BinStatistics {
+	public class UniformBinStatistics extends BinStatistics {
 
-		public BinStatistics() {
+		public UniformBinStatistics() {
 		}
 
 		@Override
-		public String toString() {
-			StringBuilder sb = new StringBuilder();
-			sb.append("Scene Spatial Index statistics {\n");
-			sb.append("\tBins: ").append(getXbins() + " x " + getYbins() + " x " + getZbins()).append("\n");
-			sb.append("\tEmpty bins: ").append(getEmptyBins()).append("\n");
-			sb.append("\tMaximum objects per spatial bin: ").append(getMaximumObjectsPerBin()).append("\n");
-			sb.append("\tAverage objects per spatial bin: ").append(Math.floor(getAverageObjectsPerBin() * 10) / 10)
-					.append("\n");
-			sb.append("\tHistogram non-empty bins ")
-					.append(getObjectsPerBinHistogram(20).toCsvString().replace("\n", "\n\t")).append("---\n");
-			sb.append("}");
-			return sb.toString();
+		public int getBinCount() {
+			return getXbins() * getYbins() * getZbins();
 		}
 
+		@Override
 		public int getEmptyBins() {
 			int empty = 0;
 			for (int zi = 0; zi < getZbins(); zi++) {
@@ -428,6 +357,7 @@ public class SceneSpatialIndex {
 			return empty;
 		}
 
+		@Override
 		public int getMaximumObjectsPerBin() {
 			int max = 0;
 			for (int zi = 0; zi < getZbins(); zi++) {
@@ -443,63 +373,58 @@ public class SceneSpatialIndex {
 			return max;
 		}
 
+		@Override
 		public double getAverageObjectsPerBin() {
+			return computeAverageObjectsPerBin(true);
+		}
+
+		@Override
+		public double getAverageObjectsPerNonEmptyBin() {
+			return computeAverageObjectsPerBin(false);
+		}
+
+		private double computeAverageObjectsPerBin(boolean includeEmptyBins) {
 			int sum = 0;
+			int count = 0;
 			for (int zi = 0; zi < getZbins(); zi++) {
 				for (int yi = 0; yi < getYbins(); yi++) {
 					for (int xi = 0; xi < getXbins(); xi++) {
 						Collection<Object3D> objects = getObjectsInBin(xi, yi, zi);
-						if (objects != null) {
+						if (objects == null || objects.isEmpty()) {
+							if (includeEmptyBins)
+								count++;
+						} else {
 							sum += objects.size();
+							count++;
 						}
 					}
 				}
 			}
-			return (double) sum / (getYbins() * getXbins() * getZbins());
+			if (count == 0)
+				return 0;
+			return (double) sum / count;
 		}
 
+		@Override
+		public double getAverageObjectsPerUnitSpace() {
+			return getAverageObjectsPerBin();
+		}
+
+		@Override
 		public ObjectsPerBinHistogram getObjectsPerBinHistogram(int classCount) {
 			int classRangeSize = (int) Math.ceil(getMaximumObjectsPerBin() / (double) classCount);
-			return new ObjectsPerBinHistogram(classCount, classRangeSize);
+			return new ObjectsPerBinHistogramImpl(classCount, classRangeSize);
 		}
 
 	}
 
-	public class ObjectsPerBinHistogram {
+	public class ObjectsPerBinHistogramImpl extends ObjectsPerBinHistogram {
 
-		private int classCount;
-
-		private int classRangeSize;
-
-		public ObjectsPerBinHistogram(int classCount, int classRangeSize) {
-			this.classCount = classCount;
-			this.classRangeSize = classRangeSize;
+		public ObjectsPerBinHistogramImpl(int classCount, int classRangeSize) {
+			super(classCount, classRangeSize);
 		}
 
-		public String toCsvString() {
-			StringBuilder sb = new StringBuilder(getClassCount() * 8);
-			sb.append("objects,count\n");
-			int[] lowerBounds = getClassLowerBounds();
-			int[] values = getClassValues();
-			for (int i = 0; i < lowerBounds.length; i++) {
-				sb.append(lowerBounds[i] + "+");
-				sb.append(',');
-				sb.append(values[i]);
-				sb.append('\n');
-			}
-			return sb.toString();
-		}
-
-		public int[] getClassLowerBounds() {
-			int n = getClassCount();
-			int size = getClassRangeSize();
-			int[] lowerBounds = new int[n];
-			for (int i = 0; i < n; i++) {
-				lowerBounds[i] = Math.max(i * size, 1); // Excluding empty bins
-			}
-			return lowerBounds;
-		}
-
+		@Override
 		public int[] getClassValues() {
 			int n = getClassCount();
 			int size = getClassRangeSize();
@@ -518,14 +443,6 @@ public class SceneSpatialIndex {
 				}
 			}
 			return values;
-		}
-
-		public int getClassCount() {
-			return classCount;
-		}
-
-		public int getClassRangeSize() {
-			return classRangeSize;
 		}
 
 	}

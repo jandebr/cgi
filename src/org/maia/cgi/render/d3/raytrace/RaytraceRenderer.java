@@ -38,8 +38,6 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 	@Override
 	protected void renderImpl(Scene scene, Collection<ViewPort> outputs, RenderOptions options) {
 		RenderState state = new RenderState(scene, options);
-		System.out.println(state);
-		System.out.println(scene.getSpatialIndex().getBinStatistics());
 		state.incrementStep();
 		renderRaster(state, outputs);
 		if (state.getCurrentStep() < state.getTotalSteps()) {
@@ -50,6 +48,8 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 	}
 
 	private synchronized void renderRaster(RenderState state, Collection<ViewPort> outputs) {
+		state.getScene().getSpatialIndex(); // create index upfront (in single thread!)
+		System.out.println(state);
 		ThreadGroup workers = new ThreadGroup("Raytrace workers");
 		int n = state.getOptions().getSafeNumberOfRenderThreads();
 		System.out.println("Spawning " + n + " raytrace worker" + (n > 1 ? "s" : ""));
@@ -173,6 +173,7 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 			sb.append("\t\tTop level objects: ").append(getScene().getTopLevelObjects().size()).append("\n");
 			sb.append("\t\tRaytraceable objects: ")
 					.append(SceneUtils.getAllRaytraceableObjectsInScene(getScene()).size()).append("\n");
+			sb.append("\t\t").append(getScene().getSpatialIndex().toString().replace("\n", "\n\t\t")).append("\n");
 			sb.append("\t}\n");
 			sb.append("\tCamera {\n");
 			sb.append("\t\tPosition: ").append(getScene().getCamera().getPosition()).append("\n");

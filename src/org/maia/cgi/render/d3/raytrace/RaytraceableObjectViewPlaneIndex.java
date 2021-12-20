@@ -262,13 +262,16 @@ public class RaytraceableObjectViewPlaneIndex {
 		public String toString() {
 			StringBuilder sb = new StringBuilder();
 			sb.append("View Plane Index statistics {\n");
-			sb.append("\tBins: ").append(getXbins() + " x " + getYbins()).append("\n");
-			sb.append("\tEmpty bins: ").append(getEmptyBins()).append("\n");
-			sb.append("\tMaximum objects per spatial bin row: ").append(getMaximumObjectsPerBinRow()).append("\n");
-			sb.append("\tMaximum objects per spatial bin: ").append(getMaximumObjectsPerBin()).append("\n");
-			sb.append("\tAverage objects per spatial bin: ").append(Math.floor(getAverageObjectsPerBin() * 10) / 10)
+			int n = getXbins() * getYbins();
+			int m = getEmptyBins();
+			sb.append("\tBins: ").append(n).append(" (" + getXbins() + " x " + getYbins() + ")").append("\n");
+			sb.append("\tEmpty bins: ").append(m).append("\n");
+			sb.append("\tNon-empty bins: ").append(n - m).append("\n");
+			sb.append("\tMaximum objects per bin row: ").append(getMaximumObjectsPerBinRow()).append("\n");
+			sb.append("\tMaximum objects per bin: ").append(getMaximumObjectsPerBin()).append("\n");
+			sb.append("\tAverage objects per bin: ").append(Math.floor(getAverageObjectsPerBin() * 10) / 10)
 					.append("\n");
-			sb.append("\tHistogram non-empty bins ")
+			sb.append("\tHistogram non-empty bins: ")
 					.append(getObjectsPerBinHistogram(20).toCsvString().replace("\n", "\n\t")).append("---\n");
 			sb.append("}");
 			return sb.toString();
@@ -353,10 +356,12 @@ public class RaytraceableObjectViewPlaneIndex {
 			int[] lowerBounds = getClassLowerBounds();
 			int[] values = getClassValues();
 			for (int i = 0; i < lowerBounds.length; i++) {
-				sb.append(lowerBounds[i] + "+");
-				sb.append(',');
-				sb.append(values[i]);
-				sb.append('\n');
+				if (i > 0 || getClassRangeSize() > 1) {
+					sb.append(lowerBounds[i] + "+");
+					sb.append(',');
+					sb.append(values[i]);
+					sb.append('\n');
+				}
 			}
 			return sb.toString();
 		}
