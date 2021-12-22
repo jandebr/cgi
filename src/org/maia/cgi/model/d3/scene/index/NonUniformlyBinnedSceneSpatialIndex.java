@@ -26,8 +26,8 @@ import org.maia.cgi.model.d3.scene.Scene;
  * </p>
  * <p>
  * Compared to a uniform (Cartesion) tessellation as in <code>UniformlyBinnedSceneSpatialIndex</code>, the space is (in
- * general) more efficiently divided and may result in a lower average and maximum number of contained objects per bin,
- * given an equal amount of bins. If this is the case, the advantage is that on average, the same line traversal as in
+ * general) more efficiently divided and may result in a lower maximum number of contained objects per bin, given an
+ * equal amount of bins. If this is the case, the advantage is that on average, the same line traversal as in
  * {@link #getObjectIntersections(LineSegment3D)} meets less objects than with a uniform tessellation of the same scene.
  * If object intersections are a costly operation, this may improve performance over the
  * <code>UniformlyBinnedSceneSpatialIndex</code>. However, the latter benefits from a faster index creation, a more
