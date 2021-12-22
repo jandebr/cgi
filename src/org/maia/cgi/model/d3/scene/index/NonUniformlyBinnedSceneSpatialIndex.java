@@ -27,13 +27,14 @@ import org.maia.cgi.model.d3.scene.Scene;
  * <p>
  * Compared to a uniform (Cartesion) tessellation as in <code>UniformlyBinnedSceneSpatialIndex</code>, the space is (in
  * general) more efficiently divided. It is not guaranteed but likely to result in a lower maximum number of contained
- * objects per bin and a lower average objects per unit space, given an equal amount of bins. If this is the case, the
- * advantage is that on average, the same line traversal as in {@link #getObjectIntersections(LineSegment3D)} meets less
- * objects than with a uniform tessellation of the same scene. If object intersections are a costly operation, this may
- * improve performance over the <code>UniformlyBinnedSceneSpatialIndex</code>. However, the latter benefits from a
- * faster index creation, a more efficient bin traversal and less memory overhead. For a given scene, advised is to
- * experiment whichever method works out better. Note that the {@link SceneSpatialIndexFactory#createIndex(Scene)} can
- * be used to make this decision, however it is based on metrics and cannot guarantee the best index for a use case.
+ * objects per bin and a lower average number of objects per unit space, given an equal amount of bins. If this is the
+ * case, the advantage is that the same line traversal as in {@link #getObjectIntersections(LineSegment3D)} on average
+ * meets less objects than with a uniform tessellation of the same scene. If object intersections are a costly
+ * operation, this may improve performance over the <code>UniformlyBinnedSceneSpatialIndex</code>. However, the latter
+ * benefits from a faster index creation, a more efficient bin traversal and less memory overhead. For a given scene,
+ * advised is to experiment whichever method works out better. Note that the
+ * {@link SceneSpatialIndexFactory#createIndex(Scene)} can be used to make this decision, however it is based on metrics
+ * and cannot guarantee the best index for a use case.
  * </p>
  * <p>
  * The spatial index is constructed based on the current positions and orientations of the objects in the scene and the
