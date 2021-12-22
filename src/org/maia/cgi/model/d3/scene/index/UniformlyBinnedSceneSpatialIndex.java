@@ -16,13 +16,16 @@ import org.maia.cgi.model.d3.object.ObjectSurfacePoint3D;
 import org.maia.cgi.model.d3.scene.Scene;
 
 /**
- * Spatial index of a Scene's objects, derived by uniformly binning in 3D camera coordinates
+ * Spatial index of a Scene's objects in camera coordinates as a Cartesian grid of unit cubes called "bins"
  * 
  * <p>
  * The spatial index is constructed based on the current positions and orientations of the objects in the scene and the
- * camera. It is the responsability of the client code to create a new index if the index should reflect an updated
- * snapshot of that scene.
+ * camera. It is the responsability of the client code to create a new index to reflect an updated snapshot of that
+ * scene.
  * </p>
+ * 
+ * @see NonUniformlyBinnedSceneSpatialIndex
+ * @see SceneSpatialIndexFactory
  */
 public class UniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex {
 

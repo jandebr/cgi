@@ -17,13 +17,35 @@ import org.maia.cgi.model.d3.object.ObjectSurfacePoint3D;
 import org.maia.cgi.model.d3.scene.Scene;
 
 /**
- * Spatial index of a Scene's objects, derived by non-uniformly binning in 3D camera coordinates
+ * Spatial index of a Scene's objects in camera coordinates as a rectilinear grid of cuboids called "bins"
  * 
  * <p>
- * The spatial index is constructed based on the current positions and orientations of the objects in the scene and the
- * camera. It is the responsability of the client code to create a new index if the index should reflect an updated
- * snapshot of that scene.
+ * The binning strategy is designed to carve out empty space in a scene and to split bins that have a higher object
+ * density into sub-bins with each a lower object density. This strategy results in a non-uniform (rectilinear) space
+ * tessellation.
  * </p>
+ * <p>
+ * Compared to a uniform (Cartesion) tessellation as in <code>UniformlyBinnedSceneSpatialIndex</code>, the space is (in
+ * general) more efficiently divided and may result in a lower average and maximum number of contained objects per bin,
+ * given an equal amount of bins. If this is the case, the advantage is that on average, the same line traversal as in
+ * {@link #getObjectIntersections(LineSegment3D)} meets less objects than with a uniform tessellation of the same scene.
+ * If object intersections are a costly operation, this may improve performance over the
+ * <code>UniformlyBinnedSceneSpatialIndex</code>. However, the latter benefits from a faster index creation, a more
+ * efficient bin traversal and less memory overhead. For a given scene, advised is to experiment whichever method works
+ * out better. Note that the {@link SceneSpatialIndexFactory#createIndex(Scene)} can be used to make this decision,
+ * however it is based on metrics and cannot guarantee the best index for a use case.
+ * </p>
+ * <p>
+ * 
+ * </p>
+ * <p>
+ * The spatial index is constructed based on the current positions and orientations of the objects in the scene and the
+ * camera. It is the responsability of the client code to create a new index to reflect an updated snapshot of that
+ * scene.
+ * </p>
+ * 
+ * @see UniformlyBinnedSceneSpatialIndex
+ * @see SceneSpatialIndexFactory
  */
 public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex {
 
