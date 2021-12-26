@@ -4,7 +4,6 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.GridLayout;
-import java.text.NumberFormat;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -18,13 +17,6 @@ import org.maia.cgi.model.d3.scene.SceneUtils.ModelMetrics;
 
 @SuppressWarnings("serial")
 public class MetricsPanel extends JPanel {
-
-	private static NumberFormat numberFormat;
-
-	static {
-		numberFormat = NumberFormat.getNumberInstance();
-		numberFormat.setGroupingUsed(true);
-	}
 
 	public MetricsPanel(ModelMetrics modelMetrics, Metrics computeMetrics, long renderTimeMs) {
 		buildUI(modelMetrics, computeMetrics, renderTimeMs);
@@ -86,16 +78,16 @@ public class MetricsPanel extends JPanel {
 		panel.add(buildMetricNameLabel("Bounding box computations"));
 		panel.add(buildMetricValueLabel(computeMetrics.getBoundingBoxComputations()));
 		addSpacer(panel);
-		panel.add(buildMetricNameLabel("Eye ray with object intersections"));
+		panel.add(buildMetricNameLabel("Eye ray object intersection checks"));
+		panel.add(buildMetricValueLabel(computeMetrics.getEyeRayWithObjectIntersectionChecks()));
+		panel.add(buildMetricNameLabel("Eye ray object intersections"));
 		panel.add(buildMetricValueLabel(computeMetrics.getEyeRayWithObjectIntersections()));
-		panel.add(buildMetricNameLabel("Eye ray with object hits"));
-		panel.add(buildMetricValueLabel(computeMetrics.getEyeRayWithObjectHits()));
 		panel.add(buildMetricNameLabel("Point to light source traversals"));
 		panel.add(buildMetricValueLabel(computeMetrics.getSurfacePositionToLightSourceTraversals()));
-		panel.add(buildMetricNameLabel("Light ray with object intersections"));
+		panel.add(buildMetricNameLabel("Light ray object intersection checks"));
+		panel.add(buildMetricValueLabel(computeMetrics.getLightRayWithObjectIntersectionChecks()));
+		panel.add(buildMetricNameLabel("Light ray object intersections"));
 		panel.add(buildMetricValueLabel(computeMetrics.getLightRayWithObjectIntersections()));
-		panel.add(buildMetricNameLabel("Light ray with object hits"));
-		panel.add(buildMetricValueLabel(computeMetrics.getLightRayWithObjectHits()));
 		JPanel parent = new JPanel(new BorderLayout());
 		parent.add(buildComputeMetricsDescription(), BorderLayout.NORTH);
 		parent.add(panel, BorderLayout.CENTER);
@@ -121,7 +113,7 @@ public class MetricsPanel extends JPanel {
 	}
 
 	protected JLabel buildMetricValueLabel(long value) {
-		JLabel label = buildMetricValueLabel(numberFormat.format(value));
+		JLabel label = buildMetricValueLabel(Metrics.format(value));
 		if (value == 0) {
 			label.setForeground(Color.GRAY);
 		}

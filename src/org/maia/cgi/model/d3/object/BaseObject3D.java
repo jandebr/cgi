@@ -290,9 +290,9 @@ public abstract class BaseObject3D implements BoundedObject3D, ComposableObject3
 			RenderOptions options) {
 		int n = intersections.size();
 		intersectSelfWithRay(ray, scene, intersections, options, true, true);
-		Metrics.getInstance().incrementEyeRayWithObjectIntersections();
+		Metrics.getInstance().incrementEyeRayWithObjectIntersectionChecks();
 		if (intersections.size() > n) {
-			Metrics.getInstance().incrementEyeRayWithObjectHits();
+			Metrics.getInstance().incrementEyeRayWithObjectIntersections();
 		}
 	}
 
@@ -300,9 +300,9 @@ public abstract class BaseObject3D implements BoundedObject3D, ComposableObject3
 	public void intersectWithLightRay(LineSegment3D ray, Scene scene, Collection<ObjectSurfacePoint3D> intersections) {
 		int n = intersections.size();
 		intersectSelfWithRay(ray, scene, intersections, null, false, false);
-		Metrics.getInstance().incrementLightRayWithObjectIntersections();
+		Metrics.getInstance().incrementLightRayWithObjectIntersectionChecks();
 		if (intersections.size() > n) {
-			Metrics.getInstance().incrementLightRayWithObjectHits();
+			Metrics.getInstance().incrementLightRayWithObjectIntersections();
 		}
 	}
 

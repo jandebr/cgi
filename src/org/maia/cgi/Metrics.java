@@ -1,5 +1,7 @@
 package org.maia.cgi;
 
+import java.text.NumberFormat;
+
 public class Metrics {
 
 	private static Metrics instance;
@@ -24,19 +26,26 @@ public class Metrics {
 
 	private long lineWithLineIntersections;
 
+	private long eyeRayWithObjectIntersectionChecks;
+
 	private long eyeRayWithObjectIntersections;
 
-	private long eyeRayWithObjectHits;
+	private long lightRayWithObjectIntersectionChecks;
 
 	private long lightRayWithObjectIntersections;
-
-	private long lightRayWithObjectHits;
 
 	private long boundingBoxComputations;
 
 	private long pointInsidePolygonChecks;
 
 	private long surfacePositionToLightSourceTraversals;
+
+	private static NumberFormat numberFormat;
+
+	static {
+		numberFormat = NumberFormat.getNumberInstance();
+		numberFormat.setGroupingUsed(true);
+	}
 
 	private Metrics() {
 		resetCounters();
@@ -59,28 +68,35 @@ public class Metrics {
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
 		builder.append("Metrics {\n");
-		builder.append("\tmatrixMultiplications: ").append(matrixMultiplications).append("\n");
-		builder.append("\tmatrixInversions: ").append(matrixInversions).append("\n");
-		builder.append("\tpointTransformations: ").append(pointTransformations).append("\n");
-		builder.append("\tpointNormalizations: ").append(pointNormalizations).append("\n");
-		builder.append("\tpointInsidePolygonChecks: ").append(pointInsidePolygonChecks).append("\n");
-		builder.append("\tvectorDotProducts: ").append(vectorDotProducts).append("\n");
-		builder.append("\tvectorCrossProducts: ").append(vectorCrossProducts).append("\n");
-		builder.append("\tvectorNormalizations: ").append(vectorNormalizations).append("\n");
-		builder.append("\tvectorAnglesInBetween: ").append(vectorAnglesInBetween).append("\n");
+		builder.append("\tMatrix multiplications: ").append(format(matrixMultiplications)).append("\n");
+		builder.append("\tMatrix inversions: ").append(format(matrixInversions)).append("\n");
+		builder.append("\tPoint transformations: ").append(format(pointTransformations)).append("\n");
+		builder.append("\tPoint normalizations: ").append(format(pointNormalizations)).append("\n");
+		builder.append("\tPoint inside polygon checks: ").append(format(pointInsidePolygonChecks)).append("\n");
+		builder.append("\tVector dot products: ").append(format(vectorDotProducts)).append("\n");
+		builder.append("\tVector cross products: ").append(format(vectorCrossProducts)).append("\n");
+		builder.append("\tVector normalizations: ").append(format(vectorNormalizations)).append("\n");
+		builder.append("\tVector angles: ").append(format(vectorAnglesInBetween)).append("\n");
 		builder.append("\t---\n");
-		builder.append("\tlineWithLineIntersections: ").append(lineWithLineIntersections).append("\n");
-		builder.append("\tlineWithPlaneIntersections: ").append(lineWithPlaneIntersections).append("\n");
-		builder.append("\tboundingBoxComputations: ").append(boundingBoxComputations).append("\n");
+		builder.append("\tLine with line intersections: ").append(format(lineWithLineIntersections)).append("\n");
+		builder.append("\tLine with plane intersections: ").append(format(lineWithPlaneIntersections)).append("\n");
+		builder.append("\tBounding box computations: ").append(format(boundingBoxComputations)).append("\n");
 		builder.append("\t---\n");
-		builder.append("\teyeRayWithObjectIntersections: ").append(eyeRayWithObjectIntersections).append("\n");
-		builder.append("\teyeRayWithObjectHits: ").append(eyeRayWithObjectHits).append("\n");
-		builder.append("\tsurfacePositionToLightSourceTraversals: ").append(surfacePositionToLightSourceTraversals)
+		builder.append("\tEye ray object intersection checks: ").append(format(eyeRayWithObjectIntersectionChecks))
 				.append("\n");
-		builder.append("\tlightRayWithObjectIntersections: ").append(lightRayWithObjectIntersections).append("\n");
-		builder.append("\tlightRayWithObjectHits: ").append(lightRayWithObjectHits).append("\n");
+		builder.append("\tEye ray object intersections: ").append(format(eyeRayWithObjectIntersections)).append("\n");
+		builder.append("\tPoint to light source traversals: ").append(format(surfacePositionToLightSourceTraversals))
+				.append("\n");
+		builder.append("\tLight ray object intersection checks: ").append(format(lightRayWithObjectIntersectionChecks))
+				.append("\n");
+		builder.append("\tLight ray object intersections: ").append(format(lightRayWithObjectIntersections))
+				.append("\n");
 		builder.append("}");
 		return builder.toString();
+	}
+
+	public static String format(long value) {
+		return numberFormat.format(value);
 	}
 
 	public void resetCounters() {
@@ -94,10 +110,10 @@ public class Metrics {
 		vectorAnglesInBetween = 0;
 		lineWithPlaneIntersections = 0;
 		lineWithLineIntersections = 0;
+		eyeRayWithObjectIntersectionChecks = 0;
 		eyeRayWithObjectIntersections = 0;
-		eyeRayWithObjectHits = 0;
+		lightRayWithObjectIntersectionChecks = 0;
 		lightRayWithObjectIntersections = 0;
-		lightRayWithObjectHits = 0;
 		boundingBoxComputations = 0;
 		pointInsidePolygonChecks = 0;
 		surfacePositionToLightSourceTraversals = 0;
@@ -143,20 +159,20 @@ public class Metrics {
 		lineWithLineIntersections++;
 	}
 
+	public void incrementEyeRayWithObjectIntersectionChecks() {
+		eyeRayWithObjectIntersectionChecks++;
+	}
+
 	public void incrementEyeRayWithObjectIntersections() {
 		eyeRayWithObjectIntersections++;
 	}
 
-	public void incrementEyeRayWithObjectHits() {
-		eyeRayWithObjectHits++;
+	public void incrementLightRayWithObjectIntersectionChecks() {
+		lightRayWithObjectIntersectionChecks++;
 	}
 
 	public void incrementLightRayWithObjectIntersections() {
 		lightRayWithObjectIntersections++;
-	}
-
-	public void incrementLightRayWithObjectHits() {
-		lightRayWithObjectHits++;
 	}
 
 	public void incrementBoundingBoxComputations() {
@@ -211,20 +227,20 @@ public class Metrics {
 		return lineWithLineIntersections;
 	}
 
+	public long getEyeRayWithObjectIntersectionChecks() {
+		return eyeRayWithObjectIntersectionChecks;
+	}
+
 	public long getEyeRayWithObjectIntersections() {
 		return eyeRayWithObjectIntersections;
 	}
 
-	public long getEyeRayWithObjectHits() {
-		return eyeRayWithObjectHits;
+	public long getLightRayWithObjectIntersectionChecks() {
+		return lightRayWithObjectIntersectionChecks;
 	}
 
 	public long getLightRayWithObjectIntersections() {
 		return lightRayWithObjectIntersections;
-	}
-
-	public long getLightRayWithObjectHits() {
-		return lightRayWithObjectHits;
 	}
 
 	public long getBoundingBoxComputations() {
