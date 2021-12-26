@@ -32,16 +32,20 @@ import org.maia.cgi.render.d3.view.ViewPort;
 
 public class RaytraceRenderer extends BaseSceneRenderer {
 
+	private static final String STEP_LABEL_RAYTRACE = "Raytrace";
+
+	private static final String STEP_LABEL_DEPTHBLUR_COMPUTE = "Compute depth blur";
+
+	private static final String STEP_LABEL_DEPTHBLUR_RENDER = "Render depth blur";
+
 	public RaytraceRenderer() {
 	}
 
 	@Override
 	protected void renderImpl(Scene scene, Collection<ViewPort> outputs, RenderOptions options) {
 		RenderState state = new RenderState(scene, options);
-		state.incrementStep();
 		renderRaster(state, outputs);
-		if (state.getCurrentStep() < state.getTotalSteps()) {
-			state.incrementStep();
+		if (state.shouldApplyDepthBlur()) {
 			applyDepthBlur(state, outputs);
 		}
 		System.out.println(Metrics.getInstance());
@@ -76,6 +80,7 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 
 	private void applyDepthBlur(RenderState state, Collection<ViewPort> outputs) {
 		// Blur by depth
+		state.incrementStep();
 		ColorDepthBuffer raster = state.getRaster();
 		int sppx = state.getSamplesPerPixelX();
 		int sppy = state.getSamplesPerPixelY();
@@ -98,8 +103,8 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 					renderPixelAtViewPorts(ix, iy, raster.convoluteColor(ix * sppx, iy * sppy, avgMatrix), outputs);
 				}
 			}
-			fireRenderingProgressUpdate(state.getScene(), state.getCurrentStep(), (iy + 1.0) / ph,
-					state.getTotalSteps());
+			fireRenderingProgressUpdate(state.getScene(), state.getTotalSteps(), state.getCurrentStep(), (iy + 1.0)
+					/ ph, STEP_LABEL_DEPTHBLUR_RENDER);
 		}
 	}
 
@@ -147,7 +152,7 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 			int yBins = Math.min((int) Math.ceil(getPixelHeight() * getSamplesPerPixelY() / 8), 500);
 			this.objectIndex = new RaytraceableObjectViewPlaneIndex(scene.getCamera(), xBins, yBins);
 			this.currentStep = 0;
-			this.totalSteps = (options.isDepthBlurEnabled() && scene.getDepthBlurParameters() != null) ? 3 : 1;
+			this.totalSteps = shouldApplyDepthBlur() ? 3 : 1;
 			this.nextRenderLineIndex = 0;
 			this.activeRenderRasterWorkers = 0;
 			init();
@@ -222,6 +227,10 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 
 		public int getSamplesPerPixel() {
 			return getSamplesPerPixelX() * getSamplesPerPixelY();
+		}
+
+		public boolean shouldApplyDepthBlur() {
+			return getOptions().isDepthBlurEnabled() && getScene().getDepthBlurParameters() != null;
 		}
 
 		public Scene getScene() {
@@ -320,8 +329,8 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 					Point3D viewPoint = new Point3D(vx, vy, vz);
 					renderPixel(ix, iy, viewPoint);
 				}
-				fireRenderingProgressUpdate(state.getScene(), state.getCurrentStep(), state.getRasterRenderProgress(),
-						state.getTotalSteps());
+				fireRenderingProgressUpdate(state.getScene(), state.getTotalSteps(), state.getCurrentStep(),
+						state.getRasterRenderProgress(), STEP_LABEL_RAYTRACE);
 			}
 			notifyRenderRasterWorkerCompletion(this);
 		}
@@ -507,7 +516,8 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 		@Override
 		public void operationUpdate(double progress) {
 			RenderState state = getState();
-			fireRenderingProgressUpdate(state.getScene(), state.getCurrentStep(), progress, state.getTotalSteps());
+			fireRenderingProgressUpdate(state.getScene(), state.getTotalSteps(), state.getCurrentStep(), progress,
+					STEP_LABEL_DEPTHBLUR_COMPUTE);
 		}
 
 		@Override

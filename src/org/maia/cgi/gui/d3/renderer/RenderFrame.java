@@ -377,7 +377,7 @@ public class RenderFrame extends JFrame implements SceneRendererProgressTracker,
 	@Override
 	public void renderingStarted(SceneRenderer renderer, Scene scene) {
 		if (isInRealisticRenderMode()) {
-			showProgress(0);
+			showZeroProgress();
 		}
 		if (isInRealisticRenderMode() || getCameraControlsPanel().isRepeatActivated()) {
 			disableRenderPanel();
@@ -387,11 +387,11 @@ public class RenderFrame extends JFrame implements SceneRendererProgressTracker,
 	}
 
 	@Override
-	public void renderingProgressUpdate(SceneRenderer renderer, Scene scene, int step, double stepProgress,
-			int totalSteps) {
+	public void renderingProgressUpdate(SceneRenderer renderer, Scene scene, int totalSteps, int stepIndex,
+			double stepProgress, String stepLabel) {
 		if (isInRealisticRenderMode()) {
 			getRenderPane().repaint();
-			showProgress(step, stepProgress, totalSteps);
+			showProgress(totalSteps, stepIndex, stepProgress, stepLabel);
 		}
 	}
 
@@ -413,19 +413,44 @@ public class RenderFrame extends JFrame implements SceneRendererProgressTracker,
 		}
 	}
 
-	protected void showProgress(int step, double stepProgress, int totalSteps) {
-		double progress = (step - 1 + stepProgress) * (1.0 / totalSteps);
-		showProgress(progress);
+	private void showZeroProgress() {
+		showProgress(0, -1, 0.0, "Initialize...");
 	}
 
-	protected void showProgress(double progress) {
-		getProgressBar().setValue((int) Math.floor(progress * 100.0));
-		getProgressBar().setStringPainted(true);
+	protected void showProgress(int totalSteps, int stepIndex, double stepProgress, String stepLabel) {
+		JProgressBar bar = getProgressBar();
+		bar.setValue((int) Math.floor(stepProgress * 100.0));
+		bar.setString(makeProgressString(totalSteps, stepIndex, stepProgress, stepLabel));
+		bar.setStringPainted(true);
+	}
+
+	protected String makeProgressString(int totalSteps, int stepIndex, double stepProgress, String stepLabel) {
+		StringBuilder sb = new StringBuilder(32);
+		if (totalSteps > 1) {
+			sb.append('(');
+			sb.append(stepIndex + 1);
+			sb.append('/');
+			sb.append(totalSteps);
+			sb.append(')');
+		}
+		if (stepLabel != null) {
+			if (sb.length() > 0)
+				sb.append(' ');
+			sb.append(stepLabel);
+		}
+		if (stepIndex >= 0) {
+			if (sb.length() > 0)
+				sb.append(' ');
+			sb.append(percentageFormat.format(stepProgress));
+		}
+		return sb.toString();
 	}
 
 	protected void clearProgress() {
-		getProgressBar().setValue(0);
-		getProgressBar().setStringPainted(false);
+		JProgressBar bar = getProgressBar();
+		bar.setValue(0);
+		bar.setString(null);
+		bar.setStringPainted(false);
 	}
 
 	protected void showSystemUsage() {
@@ -834,8 +859,8 @@ public class RenderFrame extends JFrame implements SceneRendererProgressTracker,
 		}
 
 		@Override
-		public void renderingProgressUpdate(SceneRenderer renderer, Scene scene, int step, double stepProgress,
-				int totalSteps) {
+		public void renderingProgressUpdate(SceneRenderer renderer, Scene scene, int totalSteps, int stepIndex,
+				double stepProgress, String stepLabel) {
 			updateRenderTimeMs();
 		}
 

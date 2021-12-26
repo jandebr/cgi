@@ -40,9 +40,10 @@ public abstract class BaseSceneRenderer implements SceneRenderer {
 
 	protected abstract void renderImpl(Scene scene, Collection<ViewPort> outputs, RenderOptions options);
 
-	protected void fireRenderingProgressUpdate(Scene scene, int step, double stepProgress, int totalSteps) {
+	protected void fireRenderingProgressUpdate(Scene scene, int totalSteps, int stepIndex, double stepProgress,
+			String stepLabel) {
 		for (SceneRendererProgressTracker tracker : getProgressTrackers()) {
-			tracker.renderingProgressUpdate(this, scene, step, stepProgress, totalSteps);
+			tracker.renderingProgressUpdate(this, scene, totalSteps, stepIndex, stepProgress, stepLabel);
 		}
 	}
 

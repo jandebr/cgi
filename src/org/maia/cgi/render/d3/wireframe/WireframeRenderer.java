@@ -20,6 +20,8 @@ import org.maia.cgi.transform.d3.TransformMatrix;
 
 public class WireframeRenderer extends BaseSceneRenderer {
 
+	private static final String STEP_LABEL_RENDER = "Render wireframe";
+
 	public WireframeRenderer() {
 	}
 
@@ -33,7 +35,7 @@ public class WireframeRenderer extends BaseSceneRenderer {
 			Mesh3D mesh = object.getMesh(CoordinateFrame.CAMERA, scene.getCamera());
 			renderMesh(mesh, projectionMatrix, outputs, options);
 			double progress = ++i / (double) n;
-			fireRenderingProgressUpdate(scene, 1, progress, 1);
+			fireRenderingProgressUpdate(scene, 1, 0, progress, STEP_LABEL_RENDER);
 		}
 	}
 
