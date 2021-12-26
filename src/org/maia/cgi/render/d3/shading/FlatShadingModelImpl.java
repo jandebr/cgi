@@ -1,7 +1,11 @@
 package org.maia.cgi.render.d3.shading;
 
 import java.awt.Color;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Vector;
 
 import org.maia.cgi.Metrics;
 import org.maia.cgi.compose.Compositing;
@@ -34,7 +38,15 @@ public class FlatShadingModelImpl implements FlatShadingModel {
 
 	private ThreadLocal<LineSegment3D> reusableRay;
 
+	private ThreadLocal<List<ObjectSurfacePoint3D>> reusableIntersectionsList;
+
+	private static ThreadLocal<ObscuredObjectsCache> obscuredObjectsCache;
+
 	private static final double APPROXIMATE_ZERO = 0.000001;
+
+	static {
+		obscuredObjectsCache = new ThreadLocal<ObscuredObjectsCache>();
+	}
 
 	public FlatShadingModelImpl() {
 		this(1.0, 3.0);
@@ -44,78 +56,145 @@ public class FlatShadingModelImpl implements FlatShadingModel {
 		this.lightReflectionFactor = lightReflectionFactor;
 		this.lightGlossFactor = lightGlossFactor;
 		this.reusableRay = new ThreadLocal<LineSegment3D>();
+		this.reusableIntersectionsList = new ThreadLocal<List<ObjectSurfacePoint3D>>();
 	}
 
 	@Override
 	public void applyShading(ObjectSurfacePoint3D surfacePoint, Scene scene, RenderOptions options) {
 		Object3D object = surfacePoint.getObject();
 		if (object instanceof PolygonalObject3D) {
-			surfacePoint.setColor(recolor(surfacePoint.getColor(), surfacePoint.getPositionInCamera(),
-					(PolygonalObject3D) object, scene, options));
+			Color surfaceColor = surfacePoint.getColor();
+			Color shadedColor = applyShading(surfaceColor, surfacePoint.getPositionInCamera(),
+					(PolygonalObject3D) object, scene, options);
+			surfacePoint.setColor(shadedColor);
 		}
 	}
 
-	protected Color recolor(Color surfaceColor, Point3D surfacePositionInCamera, PolygonalObject3D object, Scene scene,
-			RenderOptions options) {
-		Color color = surfaceColor;
-		color = Compositing.adjustBrightness(color,
-				getBrightnessFactor(surfacePositionInCamera, object, scene, options));
-		return color;
+	protected Color applyShading(Color surfaceColor, Point3D surfacePositionInCamera, PolygonalObject3D object,
+			Scene scene, RenderOptions options) {
+		double brightness = computeBrightnessFactor(surfacePositionInCamera, object, scene, options);
+		return Compositing.adjustBrightness(surfaceColor, brightness);
 	}
 
-	protected double getBrightnessFactor(Point3D surfacePositionInCamera, PolygonalObject3D object, Scene scene,
+	protected double computeBrightnessFactor(Point3D surfacePositionInCamera, PolygonalObject3D object, Scene scene,
 			RenderOptions options) {
-		Iterator<LightSource> it = scene.getLightSources().iterator();
 		double product = 1.0;
+		Iterator<LightSource> it = scene.getLightSources().iterator();
 		while (it.hasNext()) {
-			double lightFactor = getBrightnessFactor(it.next(), surfacePositionInCamera, object, scene, options);
+			LightSource lightSource = it.next();
+			double lightFactor = computeLightSourceBrightnessFactor(lightSource, surfacePositionInCamera, object,
+					scene, options);
 			product *= 1.0 - (lightFactor + 1.0) / 2.0;
 		}
 		return (1.0 - product) * 2.0 - 1.0;
 	}
 
-	protected double getBrightnessFactor(LightSource lightSource, Point3D surfacePositionInCamera,
+	protected double computeLightSourceBrightnessFactor(LightSource lightSource, Point3D surfacePositionInCamera,
 			PolygonalObject3D object, Scene scene, RenderOptions options) {
-		double factor = -1.0;
-		double brightness = lightSource.getBrightness() * getLightReflectionFactor();
+		double lightFactor = -1.0;
 		if (lightSource instanceof AmbientLight) {
-			factor = brightness - 1.0;
+			lightFactor = computeAmbientLightBrightnessFactor((AmbientLight) lightSource);
 		} else {
-			LineSegment3D ray = getRayFromSurfacePositionToLightSource(lightSource, surfacePositionInCamera, scene);
+			LineSegment3D ray = getRayFromSurfacePositionToLightSource(surfacePositionInCamera, lightSource, scene);
 			if (ray != null) {
-				if (options.isShadowsEnabled()) {
-					brightness *= getLightTranslucency(ray, object, scene);
-				} else {
-					brightness *= 0.7; // compensate unrealistic over-lighting of a scene in the absence of shadows
-				}
-				if (brightness > 0) {
-					Vector3D normal = object.getPlaneInCameraCoordinates(scene.getCamera()).getNormalUnitVector();
-					brightness *= Math.pow(
-							Math.abs(ray.getUnitDirection().getAngleBetweenUnitVectors(normal) / Math.PI * 2.0 - 1.0),
-							getLightGlossFactor());
-					factor = brightness * 2.0 - 1.0;
+				lightFactor = computeLightRayBrightnessFactor(ray, lightSource, object, scene, options);
+			}
+		}
+		return lightFactor;
+	}
+
+	protected double computeAmbientLightBrightnessFactor(AmbientLight light) {
+		return light.getBrightness() * getLightReflectionFactor() - 1.0;
+	}
+
+	protected double computeLightRayBrightnessFactor(LineSegment3D rayFromSurfacePositionToLightSource,
+			LightSource lightSource, PolygonalObject3D object, Scene scene, RenderOptions options) {
+		double lightFactor = -1.0;
+		double brightness = lightSource.getBrightness() * getLightReflectionFactor();
+		if (options.isShadowsEnabled()) {
+			brightness *= getLightRayTranslucency(rayFromSurfacePositionToLightSource, object, scene);
+		} else {
+			brightness *= 0.7; // compensate unrealistic over-lighting of a scene in the absence of shadows
+		}
+		if (brightness > 0) {
+			brightness *= computeLightRayGloss(rayFromSurfacePositionToLightSource, object, scene, options);
+			lightFactor = brightness * 2.0 - 1.0;
+		}
+		return lightFactor;
+	}
+
+	protected double computeLightRayGloss(LineSegment3D rayFromSurfacePositionToLightSource, PolygonalObject3D object,
+			Scene scene, RenderOptions options) {
+		Vector3D rayUnit = rayFromSurfacePositionToLightSource.getUnitDirection();
+		Vector3D normal = object.getPlaneInCameraCoordinates(scene.getCamera()).getNormalUnitVector();
+		double alfa = Math.abs(rayUnit.getAngleBetweenUnitVectors(normal) / Math.PI * 2.0 - 1.0);
+		return Math.pow(alfa, getLightGlossFactor());
+	}
+
+	protected double getLightRayTranslucency(LineSegment3D rayFromSurfacePositionToLightSource, Object3D object,
+			Scene scene) {
+		if (isObscuredFromMemory(rayFromSurfacePositionToLightSource, object, scene)) {
+			return 0; // exploited local invariance
+		} else {
+			return computeLightRayTranslucency(rayFromSurfacePositionToLightSource, object, scene);
+		}
+	}
+
+	protected boolean isObscuredFromMemory(LineSegment3D rayFromSurfacePositionToLightSource, Object3D object,
+			Scene scene) {
+		boolean obscured = false;
+		Point3D lightPosition = rayFromSurfacePositionToLightSource.getP2();
+		Object3D candidateObscuringObject = getObscuredObjectsCache().getObscuringObject(object, lightPosition);
+		if (candidateObscuringObject != null && candidateObscuringObject.isRaytraceable()) {
+			List<ObjectSurfacePoint3D> intersections = getReusableIntersectionsList();
+			intersections.clear();
+			candidateObscuringObject.asRaytraceableObject().intersectWithLightRay(rayFromSurfacePositionToLightSource,
+					scene, intersections);
+			if (!intersections.isEmpty()) {
+				obscured = Compositing.isFullyOpaque(intersections.get(0).getColor());
+			}
+		}
+		return obscured;
+	}
+
+	protected double computeLightRayTranslucency(LineSegment3D rayFromSurfacePositionToLightSource, Object3D object,
+			Scene scene) {
+		double translucency = 1.0;
+		Point3D surfacePosition = rayFromSurfacePositionToLightSource.getP1();
+		Metrics.getInstance().incrementSurfacePositionToLightSourceTraversals();
+		Iterator<ObjectSurfacePoint3D> intersectionsWithRay = scene.getSpatialIndex().getObjectIntersections(
+				rayFromSurfacePositionToLightSource);
+		while (translucency > 0 && intersectionsWithRay.hasNext()) {
+			ObjectSurfacePoint3D intersection = intersectionsWithRay.next();
+			if (intersection.getObject() != object) {
+				double squareDistance = intersection.getPositionInCamera().squareDistanceTo(surfacePosition);
+				if (squareDistance >= APPROXIMATE_ZERO) {
+					double transparency = Compositing.getTransparency(intersection.getColor());
+					translucency *= transparency;
+					if (transparency == 0) {
+						Point3D lightPosition = rayFromSurfacePositionToLightSource.getP2();
+						getObscuredObjectsCache().addToCache(object, lightPosition, intersection.getObject());
+					}
 				}
 			}
 		}
-		return factor;
+		return translucency;
 	}
 
-	private LineSegment3D getRayFromSurfacePositionToLightSource(LightSource lightSource,
-			Point3D surfacePositionInCamera, Scene scene) {
+	private LineSegment3D getRayFromSurfacePositionToLightSource(Point3D surfacePositionInCamera,
+			LightSource lightSource, Scene scene) {
+		LineSegment3D ray = null;
 		if (lightSource instanceof PositionalLightSource) {
-			LineSegment3D ray = getReusableRay();
+			ray = getReusableRay();
 			ray.setP1(surfacePositionInCamera);
 			ray.setP2(((PositionalLightSource) lightSource).getPositionInCamera(scene));
-			return ray;
 		} else if (lightSource instanceof DirectionalLightSource) {
 			Vector3D v = ((DirectionalLightSource) lightSource).getScaledDirectionOutsideOfScene(scene);
-			LineSegment3D ray = getReusableRay();
+			ray = getReusableRay();
 			ray.setP1(surfacePositionInCamera);
 			ray.setP2(surfacePositionInCamera.minus(v));
-			return ray;
-		} else {
-			return null;
 		}
+		return ray;
 	}
 
 	private LineSegment3D getReusableRay() {
@@ -127,20 +206,13 @@ public class FlatShadingModelImpl implements FlatShadingModel {
 		return ray;
 	}
 
-	protected double getLightTranslucency(LineSegment3D rayFromSurfacePositionToLightSource, Object3D self, Scene scene) {
-		double translucency = 1.0;
-		Metrics.getInstance().incrementSurfacePositionToLightSourceTraversals();
-		Iterator<ObjectSurfacePoint3D> intersectionsWithRay = scene.getSpatialIndex().getObjectIntersections(
-				rayFromSurfacePositionToLightSource);
-		while (translucency > 0 && intersectionsWithRay.hasNext()) {
-			ObjectSurfacePoint3D intersection = intersectionsWithRay.next();
-			double squareDistance = intersection.getPositionInCamera().squareDistanceTo(
-					rayFromSurfacePositionToLightSource.getP1());
-			if (intersection.getObject() != self && squareDistance >= APPROXIMATE_ZERO) {
-				translucency *= Compositing.getTransparency(intersection.getColor());
-			}
+	private List<ObjectSurfacePoint3D> getReusableIntersectionsList() {
+		List<ObjectSurfacePoint3D> list = reusableIntersectionsList.get();
+		if (list == null) {
+			list = new Vector<ObjectSurfacePoint3D>();
+			reusableIntersectionsList.set(list);
 		}
-		return translucency;
+		return list;
 	}
 
 	public double getLightReflectionFactor() {
@@ -149,6 +221,94 @@ public class FlatShadingModelImpl implements FlatShadingModel {
 
 	public double getLightGlossFactor() {
 		return lightGlossFactor;
+	}
+
+	private static ObscuredObjectsCache getObscuredObjectsCache() {
+		ObscuredObjectsCache cache = obscuredObjectsCache.get();
+		if (cache == null) {
+			cache = new ObscuredObjectsCache();
+			obscuredObjectsCache.set(cache);
+		}
+		return cache;
+	}
+
+	private static class ObscuredObjectsCache {
+
+		private Map<Object3D, ObscuredObject3D> objectIndex;
+
+		private int maxObjectSize;
+
+		public ObscuredObjectsCache() {
+			this(1000);
+		}
+
+		public ObscuredObjectsCache(int maxObjectSize) {
+			this.objectIndex = new HashMap<Object3D, ObscuredObject3D>(maxObjectSize);
+			this.maxObjectSize = maxObjectSize;
+		}
+
+		public void addToCache(Object3D obscuredObject, Point3D lightPosition, Object3D obscuringObject) {
+			ObscuredObject3D entry = getObjectIndex().get(obscuredObject);
+			if (entry == null) {
+				if (getCurrentObjectSize() == getMaxObjectSize()) {
+					getObjectIndex().clear(); // reset proved more optimal than LRU
+				}
+				entry = new ObscuredObject3D(obscuredObject);
+				getObjectIndex().put(obscuredObject, entry);
+			}
+			entry.setObscuringObject(lightPosition, obscuringObject);
+		}
+
+		public Object3D getObscuringObject(Object3D obscuredObject, Point3D lightPosition) {
+			Object3D obscuringObject = null;
+			ObscuredObject3D entry = getObjectIndex().get(obscuredObject);
+			if (entry != null) {
+				obscuringObject = entry.getObscuringObject(lightPosition);
+			}
+			return obscuringObject;
+		}
+
+		private Map<Object3D, ObscuredObject3D> getObjectIndex() {
+			return objectIndex;
+		}
+
+		private int getMaxObjectSize() {
+			return maxObjectSize;
+		}
+
+		private int getCurrentObjectSize() {
+			return getObjectIndex().size();
+		}
+
+	}
+
+	private static class ObscuredObject3D {
+
+		private Object3D object;
+
+		private Map<Point3D, Object3D> lightIndex;
+
+		public ObscuredObject3D(Object3D object) {
+			this.object = object;
+			this.lightIndex = new HashMap<Point3D, Object3D>();
+		}
+
+		public void setObscuringObject(Point3D lightPosition, Object3D obscuringObject) {
+			getLightIndex().put(lightPosition, obscuringObject);
+		}
+
+		public Object3D getObscuringObject(Point3D lightPosition) {
+			return getLightIndex().get(lightPosition);
+		}
+
+		public Object3D getObject() {
+			return object;
+		}
+
+		private Map<Point3D, Object3D> getLightIndex() {
+			return lightIndex;
+		}
+
 	}
 
 }
