@@ -60,8 +60,7 @@ public class UniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex {
 
 	@Override
 	public Iterator<ObjectSurfacePoint3D> getObjectIntersections(LineSegment3D line) {
-		boolean lineStartsWithinScene = getSceneBox().contains(line.getP1());
-		return new ObjectLineIntersectionsIteratorImpl(line, lineStartsWithinScene);
+		return new ObjectLineIntersectionsIteratorImpl(line);
 	}
 
 	private void addAllObjectsFromScene() {
@@ -238,8 +237,6 @@ public class UniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex {
 
 	private class ObjectLineIntersectionsIteratorImpl extends ObjectLineIntersectionsIterator {
 
-		private boolean lineStartsWithinScene;
-
 		private double x1, x2, xd, y1, y2, yd, z1, z2, zd;
 
 		private int xdir, ydir, zdir;
@@ -256,9 +253,8 @@ public class UniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex {
 
 		private boolean proceed;
 
-		public ObjectLineIntersectionsIteratorImpl(LineSegment3D line, boolean lineStartsWithinScene) {
+		public ObjectLineIntersectionsIteratorImpl(LineSegment3D line) {
 			super(line);
-			this.lineStartsWithinScene = lineStartsWithinScene;
 			Point3D p1 = line.getP1();
 			Point3D p2 = line.getP2();
 			// init X
@@ -290,7 +286,7 @@ public class UniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex {
 			ty = yd != 0 ? (getBinBoundaryY(yi, ydir) - y1) / yd : Double.MAX_VALUE;
 			tz = zd != 0 ? (getBinBoundaryZ(zi, zdir) - z1) / zd : Double.MAX_VALUE;
 			// init traversal
-			proceed = !lineStartsWithinScene || (xin && yin && zin);
+			proceed = xin && yin && zin;
 		}
 
 		@Override
@@ -315,17 +311,17 @@ public class UniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex {
 						xi += xdir;
 						tx = (getBinBoundaryX(xi, xdir) - x1) / xd;
 						xin = xi >= 0 && xi <= xn;
-						proceed = proceed && (!lineStartsWithinScene || xin);
+						proceed = proceed && xin;
 					} else if (ty <= tx && ty <= tz) {
 						yi += ydir;
 						ty = (getBinBoundaryY(yi, ydir) - y1) / yd;
 						yin = yi >= 0 && yi <= yn;
-						proceed = proceed && (!lineStartsWithinScene || yin);
+						proceed = proceed && yin;
 					} else {
 						zi += zdir;
 						tz = (getBinBoundaryZ(zi, zdir) - z1) / zd;
 						zin = zi >= 0 && zi <= zn;
-						proceed = proceed && (!lineStartsWithinScene || zin);
+						proceed = proceed && zin;
 					}
 					proceed = proceed && (tx <= 1.0 || ty <= 1.0 || tz <= 1.0);
 				}

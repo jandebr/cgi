@@ -26,13 +26,13 @@ public class SceneSpatialIndexFactory {
 		SceneSpatialIndex index = null;
 		BinnedSceneSpatialIndex uniform = createUniformlyBinnedIndex(scene);
 		BinnedSceneSpatialIndex nonUniform = createNonUniformlyBinnedIndex(scene);
-		if (uniform.getBinStatistics().getAverageObjectsPerUnitSpace() <= nonUniform.getBinStatistics()
-				.getAverageObjectsPerUnitSpace()) {
-			index = uniform;
-			nonUniform.dispose();
-		} else {
+		if (nonUniform.getBinStatistics().getAverageObjectsPerNonEmptyBin() < uniform.getBinStatistics()
+				.getAverageObjectsPerNonEmptyBin()) {
 			index = nonUniform;
 			uniform.dispose();
+		} else {
+			index = uniform;
+			nonUniform.dispose();
 		}
 		System.gc();
 		return index;

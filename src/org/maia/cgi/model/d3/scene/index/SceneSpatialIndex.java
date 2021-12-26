@@ -21,6 +21,16 @@ public abstract class SceneSpatialIndex {
 
 	public abstract void dispose();
 
+	/**
+	 * Returns the scene objects that intersect with the given line segment
+	 * 
+	 * @param line
+	 *            The line segment, in camera coordinates. The segment is assumed to be <i>closed</i> on both ends AND
+	 *            the first point {@link LineSegment3D#getP1()} is assumed to lie within the scene's bounding box, in
+	 *            camera coordinates
+	 * @return An iterator over the scene objects intersecting with <code>line</code>. The order of the objects is
+	 *         undefined
+	 */
 	public abstract Iterator<ObjectSurfacePoint3D> getObjectIntersections(LineSegment3D line);
 
 	public Scene getScene() {
