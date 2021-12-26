@@ -1,6 +1,7 @@
 package org.maia.cgi.model.d3.scene.index;
 
 import org.maia.cgi.model.d3.scene.Scene;
+import org.maia.cgi.model.d3.scene.index.BinnedSceneSpatialIndex.BinStatistics;
 
 public class SceneSpatialIndexFactory {
 
@@ -24,15 +25,17 @@ public class SceneSpatialIndexFactory {
 
 	public SceneSpatialIndex createIndex(Scene scene) {
 		SceneSpatialIndex index = null;
-		BinnedSceneSpatialIndex uniform = createUniformlyBinnedIndex(scene);
-		BinnedSceneSpatialIndex nonUniform = createNonUniformlyBinnedIndex(scene);
-		if (nonUniform.getBinStatistics().getAverageObjectsPerNonEmptyBin() < uniform.getBinStatistics()
-				.getAverageObjectsPerNonEmptyBin()) {
-			index = nonUniform;
-			uniform.dispose();
+		BinnedSceneSpatialIndex uniformIndex = createUniformlyBinnedIndex(scene);
+		BinnedSceneSpatialIndex nonUniformIndex = createNonUniformlyBinnedIndex(scene);
+		BinStatistics uniformStats = uniformIndex.getBinStatistics();
+		BinStatistics nonUniformStats = nonUniformIndex.getBinStatistics();
+		if (nonUniformStats.getMaximumObjectsPerBin() < uniformStats.getMaximumObjectsPerBin()
+				|| nonUniformStats.getAverageObjectsPerUnitSpace() < uniformStats.getAverageObjectsPerUnitSpace()) {
+			index = nonUniformIndex;
+			uniformIndex.dispose();
 		} else {
-			index = uniform;
-			nonUniform.dispose();
+			index = uniformIndex;
+			nonUniformIndex.dispose();
 		}
 		System.gc();
 		return index;
