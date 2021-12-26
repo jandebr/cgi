@@ -9,7 +9,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
 
+import org.maia.cgi.geometry.d3.ApproximatingCurve3D;
 import org.maia.cgi.geometry.d3.Box3D;
+import org.maia.cgi.geometry.d3.Curve3D;
 import org.maia.cgi.geometry.d3.Point3D;
 import org.maia.cgi.geometry.d3.Vector3D;
 import org.maia.cgi.model.d3.object.BaseObject3D;
@@ -46,6 +48,36 @@ public class ModelBuilderUtils {
 			System.err.println(e);
 		}
 		return vertices;
+	}
+
+	public static List<Point3D> smoothenPlanarPolyline(List<Point3D> vertices, int targetVertexCount) {
+		Curve3D curve = ApproximatingCurve3D.createStandardCurve(vertices); // keep exact start and end
+		return sampleCurve(curve, targetVertexCount, true);
+	}
+
+	public static PolygonalObject3D smoothenPolygonalShape(PolygonalObject3D shape, int targetVertexCount) {
+		Curve3D curve = ApproximatingCurve3D.createUniformClosedCurve(shape.getVerticesInWorldCoordinates());
+		boolean isConvex = shape instanceof ConvexPolygonalObject3D;
+		return planarCurveToPolygonalShape(curve, targetVertexCount, isConvex);
+	}
+
+	public static PolygonalObject3D planarCurveToPolygonalShape(Curve3D curve, int sampleCount, boolean isConvex) {
+		boolean includeCurveEnd = !curve.sample(0).equals(curve.sample(1.0));
+		List<Point3D> samples = sampleCurve(curve, sampleCount, includeCurveEnd);
+		if (isConvex) {
+			return new ConvexPolygonalObject3D(samples);
+		} else {
+			return new PolygonalObject3D(samples);
+		}
+	}
+
+	public static List<Point3D> sampleCurve(Curve3D curve, int sampleCount, boolean includeCurveEnd) {
+		List<Point3D> samples = new Vector<Point3D>(sampleCount);
+		double n = includeCurveEnd ? sampleCount - 1 : sampleCount;
+		for (int i = 0; i < sampleCount; i++) {
+			samples.add(curve.sample(i / n));
+		}
+		return samples;
 	}
 
 	public static void centerAtOrigin(BaseObject3D object) {
@@ -118,7 +150,7 @@ public class ModelBuilderUtils {
 
 	public static ConvexPolygonalObject3D buildRoundedRectangleXY(double width, double height, double cornerRadiusX,
 			double cornerRadiusY, double precision) {
-		int nc = 3 + (int) Math.ceil(precision / 0.2);
+		int nc = 3 + (int) Math.ceil(precision / 0.1);
 		List<Point3D> vertices = new Vector<Point3D>(nc * 4);
 		for (int q = 0; q < 4; q++) {
 			double xc = (width / 2.0 - cornerRadiusX) * (q <= 1 ? 1 : -1);
@@ -266,7 +298,7 @@ public class ModelBuilderUtils {
 		double t = 0.5;
 		double r = roundnessFactor * t;
 		double d = t - r;
-		int nr = 3 + (int) Math.ceil(precision / 0.33);
+		int nr = 3 + (int) Math.ceil(precision / 0.1);
 		List<PolygonalObject3D> layers = new Vector<PolygonalObject3D>(2 * nr);
 		for (int i = 0; i < nr; i++) {
 			double angle = Math.PI / 2 / (nr - 1) * i;
