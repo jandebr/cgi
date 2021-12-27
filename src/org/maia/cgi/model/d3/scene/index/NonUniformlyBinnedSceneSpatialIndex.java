@@ -69,6 +69,11 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 		this.minimumBinObjectReductionOnSplit = minimumBinObjectReductionOnSplit;
 		this.maximumBinTreeDepth = maximumBinTreeDepth;
 		this.maximumLeafBins = maximumLeafBins;
+	}
+
+	@Override
+	protected void init() {
+		super.init();
 		this.reusableDirectionsList = new ThreadLocal<List<BinSide>>();
 	}
 

@@ -150,6 +150,11 @@ public abstract class VertexObject3D extends BaseObject3D implements MeshObject3
 		invalidateCameraMesh();
 	}
 
+	@Override
+	public void compactMemoryUsage() {
+		invalidateWorldAndCameraMesh();
+	}
+
 	private void invalidateWorldAndCameraMesh() {
 		invalidateWorldMesh();
 		invalidateCameraMesh();

@@ -35,15 +35,24 @@ public class FlatShadingModelImpl implements FlatShadingModel {
 	 */
 	private double lightGlossFactor;
 
-	private ThreadLocal<LightRay> reusableLightRay;
+	private static boolean reusableUsedFlag;
 
-	private ThreadLocal<List<ObjectSurfacePoint3D>> reusableIntersectionsList;
+	private static ThreadLocal<LightRay> reusableLightRay;
+
+	private static ThreadLocal<List<ObjectSurfacePoint3D>> reusableIntersectionsList;
 
 	private static ThreadLocal<ObscuredObjectsCache> obscuredObjectsCache;
 
 	private static final double APPROXIMATE_ZERO = 0.000001;
 
 	static {
+		clear();
+	}
+
+	private static void clear() {
+		reusableUsedFlag = false;
+		reusableLightRay = new ThreadLocal<LightRay>();
+		reusableIntersectionsList = new ThreadLocal<List<ObjectSurfacePoint3D>>();
 		obscuredObjectsCache = new ThreadLocal<ObscuredObjectsCache>();
 	}
 
@@ -54,8 +63,13 @@ public class FlatShadingModelImpl implements FlatShadingModel {
 	public FlatShadingModelImpl(double lightReflectionFactor, double lightGlossFactor) {
 		this.lightReflectionFactor = lightReflectionFactor;
 		this.lightGlossFactor = lightGlossFactor;
-		this.reusableLightRay = new ThreadLocal<LightRay>();
-		this.reusableIntersectionsList = new ThreadLocal<List<ObjectSurfacePoint3D>>();
+	}
+
+	@Override
+	public void compactMemoryUsage() {
+		if (reusableUsedFlag) {
+			clear();
+		}
 	}
 
 	@Override
@@ -186,22 +200,38 @@ public class FlatShadingModelImpl implements FlatShadingModel {
 		return ray;
 	}
 
-	private LightRay getReusableLightRay() {
-		LightRay ray = this.reusableLightRay.get();
+	private static LightRay getReusableLightRay() {
+		LightRay ray = reusableLightRay.get();
 		if (ray == null) {
 			ray = new LightRay();
-			this.reusableLightRay.set(ray);
+			reusableLightRay.set(ray);
+			markReusableAsUsed();
 		}
 		return ray;
 	}
 
-	private List<ObjectSurfacePoint3D> getReusableIntersectionsList() {
+	private static List<ObjectSurfacePoint3D> getReusableIntersectionsList() {
 		List<ObjectSurfacePoint3D> list = reusableIntersectionsList.get();
 		if (list == null) {
 			list = new Vector<ObjectSurfacePoint3D>();
 			reusableIntersectionsList.set(list);
+			markReusableAsUsed();
 		}
 		return list;
+	}
+
+	private static ObscuredObjectsCache getObscuredObjectsCache() {
+		ObscuredObjectsCache cache = obscuredObjectsCache.get();
+		if (cache == null) {
+			cache = new ObscuredObjectsCache();
+			obscuredObjectsCache.set(cache);
+			markReusableAsUsed();
+		}
+		return cache;
+	}
+
+	private static void markReusableAsUsed() {
+		reusableUsedFlag = true;
 	}
 
 	public double getLightReflectionFactor() {
@@ -210,15 +240,6 @@ public class FlatShadingModelImpl implements FlatShadingModel {
 
 	public double getLightGlossFactor() {
 		return lightGlossFactor;
-	}
-
-	private static ObscuredObjectsCache getObscuredObjectsCache() {
-		ObscuredObjectsCache cache = obscuredObjectsCache.get();
-		if (cache == null) {
-			cache = new ObscuredObjectsCache();
-			obscuredObjectsCache.set(cache);
-		}
-		return cache;
 	}
 
 	private static class LightRay extends LineSegment3D {

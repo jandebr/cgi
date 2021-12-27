@@ -2,6 +2,9 @@ package org.maia.cgi;
 
 public interface MemorizedCompute {
 
-	void releaseMemory();
-	
+	/**
+	 * Free up memory that is either unused or that can be recomputed transparently
+	 */
+	void compactMemoryUsage();
+
 }

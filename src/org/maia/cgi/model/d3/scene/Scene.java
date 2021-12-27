@@ -98,8 +98,11 @@ public class Scene implements CameraObserver, MemorizedCompute {
 	}
 
 	@Override
-	public void releaseMemory() {
+	public void compactMemoryUsage() {
 		invalidateSpatialIndices();
+		for (Object3D object : getTopLevelObjects()) {
+			object.compactMemoryUsage();
+		}
 	}
 
 	public Box3D getBoundingBox(CoordinateFrame cframe) {

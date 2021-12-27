@@ -20,6 +20,10 @@ public abstract class BinnedSceneSpatialIndex extends SceneSpatialIndex {
 
 	protected BinnedSceneSpatialIndex(Scene scene) {
 		super(scene);
+		init();
+	}
+
+	protected void init() {
 		this.reusableIntersectionsList = new ThreadLocal<List<ObjectSurfacePoint3D>>();
 		this.reusableObjectsSet = new ThreadLocal<Set<Object3D>>();
 	}
@@ -27,6 +31,11 @@ public abstract class BinnedSceneSpatialIndex extends SceneSpatialIndex {
 	@Override
 	public String toString() {
 		return getBinStatistics().toString();
+	}
+
+	@Override
+	public void compactMemoryUsage() {
+		init();
 	}
 
 	public abstract BinStatistics getBinStatistics();

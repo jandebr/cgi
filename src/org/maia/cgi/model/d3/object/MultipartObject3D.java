@@ -71,8 +71,8 @@ public class MultipartObject3D<T extends ComposableObject3D> extends BaseObject3
 	}
 
 	@Override
-	public void intersectWithEyeRay(LineSegment3D ray, Scene scene, Collection<ObjectSurfacePoint3D> intersections,
-			RenderOptions options) {
+	public final void intersectWithEyeRay(LineSegment3D ray, Scene scene,
+			Collection<ObjectSurfacePoint3D> intersections, RenderOptions options) {
 		for (Iterator<T> it = getParts().iterator(); it.hasNext();) {
 			Object3D part = it.next();
 			if (part.isRaytraceable()) {
@@ -82,7 +82,8 @@ public class MultipartObject3D<T extends ComposableObject3D> extends BaseObject3
 	}
 
 	@Override
-	public void intersectWithLightRay(LineSegment3D ray, Scene scene, Collection<ObjectSurfacePoint3D> intersections) {
+	public final void intersectWithLightRay(LineSegment3D ray, Scene scene,
+			Collection<ObjectSurfacePoint3D> intersections) {
 		for (Iterator<T> it = getParts().iterator(); it.hasNext();) {
 			Object3D part = it.next();
 			if (part.isRaytraceable()) {
@@ -92,7 +93,7 @@ public class MultipartObject3D<T extends ComposableObject3D> extends BaseObject3
 	}
 
 	@Override
-	protected void intersectSelfWithRay(LineSegment3D ray, Scene scene,
+	protected final void intersectSelfWithRay(LineSegment3D ray, Scene scene,
 			Collection<ObjectSurfacePoint3D> intersections, RenderOptions options, boolean applyShading,
 			boolean rayFromEye) {
 		// nothing to do, intersections only apply to parts
@@ -114,6 +115,13 @@ public class MultipartObject3D<T extends ComposableObject3D> extends BaseObject3
 	public void cameraHasChanged(Camera camera) {
 		super.cameraHasChanged(camera);
 		fireCameraHasChangedOnParts(camera);
+	}
+
+	@Override
+	public final void compactMemoryUsage() {
+		for (Iterator<T> it = getParts().iterator(); it.hasNext();) {
+			it.next().compactMemoryUsage();
+		}
 	}
 
 	private void fireAncestorHasTransformedOnParts() {

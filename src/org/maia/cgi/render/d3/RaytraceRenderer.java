@@ -57,9 +57,9 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 		int steps = state.getTotalSteps();
 		int step = state.getCurrentStep();
 		fireRenderingProgressUpdate(scene, steps, step, 0.0, STEP_LABEL_INITIALIZE);
-		scene.getSpatialIndex(); // create spatial index upfront (in single thread!)
+		scene.getSpatialIndex().compactMemoryUsage(); // create spatial index upfront (in single thread!)
 		fireRenderingProgressUpdate(scene, steps, step, 0.5, STEP_LABEL_INITIALIZE);
-		scene.getViewPlaneIndex(); // create view plane index upfront (in single thread!)
+		scene.getViewPlaneIndex().compactMemoryUsage(); // create view plane index upfront (in single thread!)
 		fireRenderingProgressUpdate(scene, steps, step, 1.0, STEP_LABEL_INITIALIZE);
 		System.out.println(state);
 	}

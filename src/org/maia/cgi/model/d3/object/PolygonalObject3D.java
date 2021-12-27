@@ -222,6 +222,13 @@ public class PolygonalObject3D extends VertexObject3D {
 		invalidateProjectionState();
 	}
 
+	@Override
+	public void compactMemoryUsage() {
+		super.compactMemoryUsage();
+		invalidatePlane();
+		invalidateProjectionState();
+	}
+
 	private void invalidatePlane() {
 		planeCamera = null;
 	}

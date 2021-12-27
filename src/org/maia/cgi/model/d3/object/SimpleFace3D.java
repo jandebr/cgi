@@ -66,6 +66,12 @@ public class SimpleFace3D extends ConvexPolygonalObject3D {
 		getShadingModel().applyShading(surfacePoint, scene, options);
 	}
 
+	@Override
+	public void compactMemoryUsage() {
+		super.compactMemoryUsage();
+		getShadingModel().compactMemoryUsage();
+	}
+
 	public Color getFrontColor() {
 		return frontColor;
 	}

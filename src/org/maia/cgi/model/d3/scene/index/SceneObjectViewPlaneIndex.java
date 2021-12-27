@@ -33,8 +33,19 @@ public class SceneObjectViewPlaneIndex extends NonUniformlyBinnedSceneSpatialInd
 		super(scene, maximumLeafBins);
 		this.backZ = getViewVolume().getFarPlaneZ();
 		this.frontZ = getViewVolume().getViewPlaneZ();
+	}
+
+	@Override
+	protected void init() {
+		super.init();
 		this.objectBoxes = new HashMap<Object3D, Box3D>(1000);
 		this.lastVisitedLeafBin = new ThreadLocal<SpatialBin>();
+	}
+
+	@Override
+	public void dispose() {
+		super.dispose();
+		getObjectBoxes().clear();
 	}
 
 	@Override
