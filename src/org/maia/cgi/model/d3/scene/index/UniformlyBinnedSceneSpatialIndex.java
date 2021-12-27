@@ -50,7 +50,7 @@ public class UniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex {
 	@Override
 	public void buildIndex() {
 		setFirstBinBoundingBox(deriveFirstBinBoundingBox());
-		for (Object3D object : getSceneObjects()) {
+		for (Object3D object : getIndexedObjects()) {
 			addObject(object);
 		}
 	}

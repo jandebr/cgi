@@ -114,7 +114,7 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 	}
 
 	private SpatialBin createRootBin() {
-		return new SpatialBin(new Vector<Object3D>(getSceneObjects()), getSceneBox());
+		return new SpatialBin(new Vector<Object3D>(getIndexedObjects()), getSceneBox());
 	}
 
 	protected boolean splitBinsExclusivelyInXY() {

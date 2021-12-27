@@ -77,16 +77,20 @@ public class SceneObjectViewPlaneIndex extends NonUniformlyBinnedSceneSpatialInd
 
 	@Override
 	protected Box3D getSceneBox() {
-		Box3D box = super.getSceneBox();
-		return new Box3D(box.getX1(), box.getX2(), box.getY1(), box.getY2(), getBackZ(), getFrontZ());
+		Rectangle2D vpr = getViewVolume().getViewPlaneRectangle();
+		return new Box3D(vpr.getX1(), vpr.getX2(), vpr.getY1(), vpr.getY2(), getBackZ(), getFrontZ());
 	}
 
 	@Override
 	protected Box3D getObjectBox(Object3D object) {
-		Box3D box = getObjectBoxes().get(object);
-		if (box == null) {
+		Box3D box = null;
+		if (getObjectBoxes().containsKey(object)) {
+			box = getObjectBoxes().get(object);
+		} else {
 			Rectangle2D rect = getObjectBoundsClippedOnViewPlane(object);
-			box = new Box3D(rect.getX1(), rect.getX2(), rect.getY1(), rect.getY2(), getBackZ(), getFrontZ());
+			if (rect != null) {
+				box = new Box3D(rect.getX1(), rect.getX2(), rect.getY1(), rect.getY2(), getBackZ(), getFrontZ());
+			}
 			getObjectBoxes().put(object, box);
 		}
 		return box;

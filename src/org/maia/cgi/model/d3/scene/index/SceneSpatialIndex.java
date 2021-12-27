@@ -2,6 +2,7 @@ package org.maia.cgi.model.d3.scene.index;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Vector;
 
 import org.maia.cgi.geometry.d3.Box3D;
 import org.maia.cgi.geometry.d3.LineSegment3D;
@@ -39,6 +40,23 @@ public abstract class SceneSpatialIndex {
 		return scene;
 	}
 
+	protected Collection<Object3D> getIndexedObjects() {
+		Collection<Object3D> sceneObjects = SceneUtils.getAllIndividualObjectsInScene(getScene());
+		Collection<Object3D> indexedObjects = new Vector<Object3D>(sceneObjects.size());
+		Box3D sceneBox = getSceneBox();
+		for (Object3D object : sceneObjects) {
+			boolean overlaps = true;
+			if (object.isBounded()) {
+				Box3D objectBox = getObjectBox(object);
+				overlaps = objectBox != null && objectBox.overlaps(sceneBox);
+			}
+			if (overlaps) {
+				indexedObjects.add(object);
+			}
+		}
+		return indexedObjects;
+	}
+
 	protected Box3D getSceneBox() {
 		return getScene().getBoundingBox(CoordinateFrame.CAMERA);
 	}
@@ -49,10 +67,6 @@ public abstract class SceneSpatialIndex {
 			box = object.asBoundedObject().getBoundingBox(CoordinateFrame.CAMERA, getScene().getCamera());
 		}
 		return box;
-	}
-
-	protected Collection<Object3D> getSceneObjects() {
-		return SceneUtils.getAllIndividualObjectsInScene(getScene());
 	}
 
 }
