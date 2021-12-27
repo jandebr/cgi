@@ -223,8 +223,8 @@ public class PolygonalObject3D extends VertexObject3D {
 	}
 
 	@Override
-	public void compactMemoryUsage() {
-		super.compactMemoryUsage();
+	public void releaseMemory() {
+		super.releaseMemory();
 		invalidatePlane();
 		invalidateProjectionState();
 	}

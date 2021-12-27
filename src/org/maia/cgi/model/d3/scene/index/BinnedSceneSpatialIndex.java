@@ -34,7 +34,7 @@ public abstract class BinnedSceneSpatialIndex extends SceneSpatialIndex {
 	}
 
 	@Override
-	public void compactMemoryUsage() {
+	public void releaseMemory() {
 		init();
 	}
 

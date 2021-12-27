@@ -66,7 +66,7 @@ public class FlatShadingModelImpl implements FlatShadingModel {
 	}
 
 	@Override
-	public void compactMemoryUsage() {
+	public void releaseMemory() {
 		if (reusableUsedFlag) {
 			clear();
 		}

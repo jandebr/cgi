@@ -118,9 +118,9 @@ public class MultipartObject3D<T extends ComposableObject3D> extends BaseObject3
 	}
 
 	@Override
-	public final void compactMemoryUsage() {
+	public final void releaseMemory() {
 		for (Iterator<T> it = getParts().iterator(); it.hasNext();) {
-			it.next().compactMemoryUsage();
+			it.next().releaseMemory();
 		}
 	}
 

@@ -1,6 +1,6 @@
 package org.maia.cgi.model.d3.object;
 
-import org.maia.cgi.MemorizedCompute;
+import org.maia.cgi.Memoise;
 import org.maia.cgi.model.d3.camera.CameraObserver;
 
 /**
@@ -25,7 +25,7 @@ import org.maia.cgi.model.d3.camera.CameraObserver;
  * 
  * </p>
  */
-public interface Object3D extends CameraObserver, MemorizedCompute {
+public interface Object3D extends CameraObserver, Memoise {
 
 	boolean isBounded();
 

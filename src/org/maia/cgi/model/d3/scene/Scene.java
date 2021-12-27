@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
 
-import org.maia.cgi.MemorizedCompute;
+import org.maia.cgi.Memoise;
 import org.maia.cgi.Metrics;
 import org.maia.cgi.compose.d3.DepthBlurParameters;
 import org.maia.cgi.compose.d3.DepthFunction;
@@ -20,7 +20,7 @@ import org.maia.cgi.model.d3.scene.index.SceneSpatialIndex;
 import org.maia.cgi.model.d3.scene.index.SceneSpatialIndexFactory;
 import org.maia.cgi.render.d3.view.ColorDepthBuffer;
 
-public class Scene implements CameraObserver, MemorizedCompute {
+public class Scene implements CameraObserver, Memoise {
 
 	/**
 	 * A descriptive name for the scene.
@@ -98,10 +98,10 @@ public class Scene implements CameraObserver, MemorizedCompute {
 	}
 
 	@Override
-	public void compactMemoryUsage() {
+	public void releaseMemory() {
 		invalidateSpatialIndices();
 		for (Object3D object : getTopLevelObjects()) {
-			object.compactMemoryUsage();
+			object.releaseMemory();
 		}
 	}
 

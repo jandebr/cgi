@@ -4,7 +4,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Vector;
 
-import org.maia.cgi.MemorizedCompute;
+import org.maia.cgi.Memoise;
 import org.maia.cgi.geometry.d3.Box3D;
 import org.maia.cgi.geometry.d3.LineSegment3D;
 import org.maia.cgi.model.d3.CoordinateFrame;
@@ -13,7 +13,7 @@ import org.maia.cgi.model.d3.object.ObjectSurfacePoint3D;
 import org.maia.cgi.model.d3.scene.Scene;
 import org.maia.cgi.model.d3.scene.SceneUtils;
 
-public abstract class SceneSpatialIndex implements MemorizedCompute {
+public abstract class SceneSpatialIndex implements Memoise {
 
 	private Scene scene;
 

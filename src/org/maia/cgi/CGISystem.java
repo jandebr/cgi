@@ -29,7 +29,7 @@ public class CGISystem {
 	}
 
 	public static void releaseMemory(Scene scene) {
-		scene.compactMemoryUsage();
+		scene.releaseMemory();
 		releaseMemory();
 	}
 
