@@ -57,19 +57,33 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 		int steps = state.getTotalSteps();
 		int step = state.getCurrentStep();
 		fireRenderingProgressUpdate(scene, steps, step, 0.0, STEP_LABEL_INITIALIZE);
-		scene.getSpatialIndex().releaseMemory(); // create spatial index upfront (in single thread!)
+		scene.getSpatialIndex(); // create spatial index upfront (in single thread!)
 		fireRenderingProgressUpdate(scene, steps, step, 0.5, STEP_LABEL_INITIALIZE);
-		scene.getViewPlaneIndex().releaseMemory(); // create view plane index upfront (in single thread!)
+		scene.getViewPlaneIndex(); // create view plane index upfront (in single thread!)
 		fireRenderingProgressUpdate(scene, steps, step, 1.0, STEP_LABEL_INITIALIZE);
 		System.out.println(state);
 	}
 
-	private synchronized void renderRaster(RenderState state, Collection<ViewPort> outputs) {
+	private void renderRaster(RenderState state, Collection<ViewPort> outputs) {
 		state.incrementStep();
-		ThreadGroup workers = new ThreadGroup("Raytrace workers");
 		int n = state.getOptions().getSafeNumberOfRenderThreads();
-		System.out.println("Spawning " + n + " raytrace worker" + (n > 1 ? "s" : ""));
-		for (int i = 0; i < n; i++) {
+		if (n == 1) {
+			renderRasterInCurrentThread(state, outputs);
+		} else {
+			renderRasterInSeparateThreads(state, outputs, n);
+		}
+	}
+
+	private void renderRasterInCurrentThread(RenderState state, Collection<ViewPort> outputs) {
+		state.setActiveRenderRasterWorkers(1);
+		new RenderRasterWorker(state, outputs).run();
+	}
+
+	private synchronized void renderRasterInSeparateThreads(RenderState state, Collection<ViewPort> outputs,
+			int numberOfThreads) {
+		ThreadGroup workers = new ThreadGroup("Raytrace workers");
+		System.out.println("Spawning " + numberOfThreads + " raytrace worker threads");
+		for (int i = 0; i < numberOfThreads; i++) {
 			Thread t = new Thread(workers, new RenderRasterWorker(state, outputs), "Raytrace worker #" + i);
 			t.setDaemon(true);
 			t.start();

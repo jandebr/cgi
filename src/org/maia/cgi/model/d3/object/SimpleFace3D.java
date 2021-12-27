@@ -20,7 +20,7 @@ import org.maia.cgi.render.d3.shading.FlatShadingModel;
  * </p>
  * <p>
  * A solid color applies to a <em>simple face</em>, although there can be a separate color for the front and back side
- * of the face, and also the color is subject to a <code>FlatShadingModel</code>.
+ * of the face. In addition, the color is subject to a <code>FlatShadingModel</code>.
  * </p>
  * 
  * @see FlatShadingModel

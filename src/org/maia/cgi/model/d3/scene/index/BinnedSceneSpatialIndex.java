@@ -62,10 +62,16 @@ public abstract class BinnedSceneSpatialIndex extends SceneSpatialIndex {
 
 		private LineSegment3D line;
 
+		private List<ObjectSurfacePoint3D> intersections;
+
+		private Set<Object3D> objects;
+
 		protected ObjectLineIntersectionsIterator(LineSegment3D line) {
 			this.line = line;
-			getIntersections().clear();
-			getObjects().clear();
+			this.intersections = getReusableIntersectionsList();
+			this.intersections.clear();
+			this.objects = getReusableObjectsSet();
+			this.objects.clear();
 		}
 
 		@Override
@@ -99,11 +105,11 @@ public abstract class BinnedSceneSpatialIndex extends SceneSpatialIndex {
 		}
 
 		protected List<ObjectSurfacePoint3D> getIntersections() {
-			return getReusableIntersectionsList();
+			return intersections;
 		}
 
 		protected Set<Object3D> getObjects() {
-			return getReusableObjectsSet();
+			return objects;
 		}
 
 	}

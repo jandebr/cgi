@@ -831,6 +831,8 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 
 		private boolean proceed;
 
+		private List<BinSide> directions;
+
 		public ObjectLineIntersectionsIteratorImpl(LineSegment3D line) {
 			super(line);
 			Point3D p1 = line.getP1();
@@ -847,6 +849,7 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 			currentBin = getRootBin().findLeafBinContaining(p1, xAffinity, yAffinity, zAffinity);
 			currentPosition = p1.clone();
 			proceed = currentBin != null;
+			directions = getReusableDirectionsList();
 		}
 
 		@Override
@@ -885,7 +888,6 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 			double rz = dz > 0 ? (currentBin.getZ2() - pz) / dz : (dz < 0 ? (currentBin.getZ1() - pz) / dz
 					: Double.POSITIVE_INFINITY);
 			// Closest side(s) hit
-			List<BinSide> directions = getDirections();
 			directions.clear();
 			double qx, qy, qz;
 			double r = Math.min(Math.min(rx, ry), rz);
@@ -933,10 +935,6 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 				}
 			}
 			return null;
-		}
-
-		private List<BinSide> getDirections() {
-			return getReusableDirectionsList();
 		}
 
 	}

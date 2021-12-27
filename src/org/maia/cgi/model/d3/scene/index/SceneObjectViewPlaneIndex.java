@@ -178,6 +178,9 @@ public class SceneObjectViewPlaneIndex extends NonUniformlyBinnedSceneSpatialInd
 
 	private class ObjectSorterByIncreasingDepth implements Comparator<Object3D> {
 
+		public ObjectSorterByIncreasingDepth() {
+		}
+
 		@Override
 		public int compare(Object3D o1, Object3D o2) {
 			double nearDepth1 = -o1.asBoundedObject().getBoundingBox(CoordinateFrame.CAMERA, getCamera()).getZ2();

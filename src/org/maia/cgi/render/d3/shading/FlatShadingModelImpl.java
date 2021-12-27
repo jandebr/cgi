@@ -49,7 +49,7 @@ public class FlatShadingModelImpl implements FlatShadingModel {
 		clear();
 	}
 
-	private static void clear() {
+	public static void clear() {
 		reusableUsedFlag = false;
 		reusableLightRay = new ThreadLocal<LightRay>();
 		reusableIntersectionsList = new ThreadLocal<List<ObjectSurfacePoint3D>>();
