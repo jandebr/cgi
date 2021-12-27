@@ -36,4 +36,9 @@ public class InboundLight extends BaseLight implements DirectionalLightSource {
 		return direction;
 	}
 
+	@Override
+	public boolean isDirectional() {
+		return true;
+	}
+
 }

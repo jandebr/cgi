@@ -11,4 +11,20 @@ public interface LightSource extends CameraObserver {
 	 */
 	double getBrightness();
 
+	/**
+	 * Tells whether this light source is originating from one position in space
+	 * 
+	 * @return <code>true</code> iff this light source is an instance of <code>PositionalLightSource</code>
+	 * @see {@link PositionalLightSource}
+	 */
+	boolean isPositional();
+
+	/**
+	 * Tells whether this light source radiates out in space in one direction
+	 * 
+	 * @return <code>true</code> iff this light source is an instance of <code>DirectionalLightSource</code>
+	 * @see {@link DirectionalLightSource}
+	 */
+	boolean isDirectional();
+
 }

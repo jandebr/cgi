@@ -61,4 +61,9 @@ public class SpotLight extends BaseLight implements PositionalLightSource {
 		return stationary;
 	}
 
+	@Override
+	public boolean isPositional() {
+		return true;
+	}
+
 }

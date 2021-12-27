@@ -115,7 +115,7 @@ public class SceneUtils {
 	public static Collection<PositionalLightSource> getAllPositionalLightSourcesInScene(Scene scene) {
 		Collection<PositionalLightSource> lightSources = new Vector<PositionalLightSource>();
 		for (LightSource lightSource : scene.getLightSources()) {
-			if (lightSource instanceof PositionalLightSource) {
+			if (lightSource.isPositional()) {
 				lightSources.add((PositionalLightSource) lightSource);
 			}
 		}
@@ -125,7 +125,7 @@ public class SceneUtils {
 	public static Collection<DirectionalLightSource> getAllDirectionalLightSourcesInScene(Scene scene) {
 		Collection<DirectionalLightSource> lightSources = new Vector<DirectionalLightSource>();
 		for (LightSource lightSource : scene.getLightSources()) {
-			if (lightSource instanceof DirectionalLightSource) {
+			if (lightSource.isDirectional()) {
 				lightSources.add((DirectionalLightSource) lightSource);
 			}
 		}

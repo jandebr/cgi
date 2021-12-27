@@ -20,4 +20,16 @@ public abstract class BaseLight implements LightSource {
 		return brightness;
 	}
 
+	@Override
+	public boolean isPositional() {
+		// Subclasses may override this method
+		return false;
+	}
+
+	@Override
+	public boolean isDirectional() {
+		// Subclasses may override this method
+		return false;
+	}
+
 }
