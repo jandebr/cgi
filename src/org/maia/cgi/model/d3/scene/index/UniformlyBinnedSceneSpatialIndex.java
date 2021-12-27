@@ -45,7 +45,14 @@ public class UniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex {
 		this.yBins = yBins;
 		this.zBins = zBins;
 		this.index = new HashMap<SpatialBin, Collection<Object3D>>(xBins * yBins);
-		addAllObjectsFromScene();
+	}
+
+	@Override
+	public void buildIndex() {
+		setFirstBinBoundingBox(deriveFirstBinBoundingBox());
+		for (Object3D object : getSceneObjects()) {
+			addObject(object);
+		}
 	}
 
 	@Override
@@ -61,13 +68,6 @@ public class UniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex {
 	@Override
 	public Iterator<ObjectSurfacePoint3D> getObjectIntersections(LineSegment3D line) {
 		return new ObjectLineIntersectionsIteratorImpl(line);
-	}
-
-	private void addAllObjectsFromScene() {
-		setFirstBinBoundingBox(deriveFirstBinBoundingBox());
-		for (Object3D object : getSceneObjects()) {
-			addObject(object);
-		}
 	}
 
 	private void addObject(Object3D object) {

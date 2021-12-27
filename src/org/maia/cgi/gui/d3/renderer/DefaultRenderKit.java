@@ -1,11 +1,11 @@
 package org.maia.cgi.gui.d3.renderer;
 
 import org.maia.cgi.model.d3.scene.Scene;
+import org.maia.cgi.render.d3.RaytraceRenderer;
 import org.maia.cgi.render.d3.RenderOptions;
+import org.maia.cgi.render.d3.WireframeRenderer;
 import org.maia.cgi.render.d3.RenderOptions.RenderMode;
 import org.maia.cgi.render.d3.SceneRenderer;
-import org.maia.cgi.render.d3.raytrace.RaytraceRenderer;
-import org.maia.cgi.render.d3.wireframe.WireframeRenderer;
 
 public class DefaultRenderKit implements RenderKit {
 

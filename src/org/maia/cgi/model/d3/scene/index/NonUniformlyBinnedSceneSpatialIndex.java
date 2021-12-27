@@ -1,6 +1,5 @@
 package org.maia.cgi.model.d3.scene.index;
 
-import java.util.Collection;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -33,8 +32,8 @@ import org.maia.cgi.model.d3.scene.Scene;
  * operation, this may improve performance over the <code>UniformlyBinnedSceneSpatialIndex</code>. However, the latter
  * benefits from a faster index creation, a more efficient bin traversal and less memory overhead. For a given scene,
  * advised is to experiment whichever method works out better. Note that the
- * {@link SceneSpatialIndexFactory#createIndex(Scene)} can be used to make this decision, however it is based on metrics
- * and cannot guarantee the best index for a use case.
+ * {@link SceneSpatialIndexFactory#createSpatialIndex(Scene)} can be used to make this decision, however it is based on
+ * metrics and cannot guarantee the best index for a use case.
  * </p>
  * <p>
  * The spatial index is constructed based on the current positions and orientations of the objects in the scene and the
@@ -71,12 +70,28 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 		this.maximumBinTreeDepth = maximumBinTreeDepth;
 		this.maximumLeafBins = maximumLeafBins;
 		this.reusableDirectionsList = new ThreadLocal<List<BinSide>>();
-		setRootBin(createRootBin());
-		buildIndex();
 	}
 
 	public void printBins() {
 		System.out.println(getRootBin());
+	}
+
+	@Override
+	public void buildIndex() {
+		setRootBin(createRootBin());
+		int leafs = 1; // root bin is a leaf initially
+		int maxLeafs = getMaximumLeafBins();
+		Deque<SpatialBin> queue = new LinkedList<SpatialBin>();
+		queue.add(getRootBin());
+		while (!queue.isEmpty() && leafs < maxLeafs) {
+			SpatialBin bin = queue.pollFirst();
+			if (bin.split()) {
+				// Breadth-first traversal, to balance the bounded-size tree in depth
+				queue.addLast(bin.getSplit().getFirstChildBin());
+				queue.addLast(bin.getSplit().getSecondChildBin());
+				leafs++; // bin no longer is a leaf, so -1 + 2
+			}
+		}
 	}
 
 	@Override
@@ -91,27 +106,33 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 
 	@Override
 	public Iterator<ObjectSurfacePoint3D> getObjectIntersections(LineSegment3D line) {
-		return new ObjectLineIntersectionsIteratorImpl(line);
+		if (keepTrackOfBinNeighbors()) {
+			return new ObjectLineIntersectionsIteratorImpl(line);
+		} else {
+			throw new UnsupportedOperationException("Requires keeping track of bin neighbors");
+		}
 	}
 
 	private SpatialBin createRootBin() {
-		return new SpatialBin(getSceneObjects(), getSceneBox());
+		return new SpatialBin(new Vector<Object3D>(getSceneObjects()), getSceneBox());
 	}
 
-	private void buildIndex() {
-		int leafs = 1; // root bin is a leaf initially
-		int maxLeafs = getMaximumLeafBins();
-		Deque<SpatialBin> queue = new LinkedList<SpatialBin>();
-		queue.add(getRootBin());
-		while (!queue.isEmpty() && leafs < maxLeafs) {
-			SpatialBin bin = queue.pollFirst();
-			if (bin.split()) {
-				// Breadth-first traversal, to balance the bounded-size tree in depth
-				queue.addLast(bin.getSplit().getFirstChildBin());
-				queue.addLast(bin.getSplit().getSecondChildBin());
-				leafs++; // bin no longer is a leaf, so -1 + 2
-			}
-		}
+	protected boolean splitBinsExclusivelyInXY() {
+		// Subclasses may override this method
+		return false;
+	}
+
+	protected boolean keepTrackOfBinNeighbors() {
+		// Subclasses may override this method
+		return true;
+	}
+
+	protected Iterator<SpatialBin> getDepthFirstLeafBinIterator() {
+		return new DepthFirstLeafBinIterator(getRootBin());
+	}
+
+	protected SpatialBin findLeafBinContaining(Point3D point) {
+		return getRootBin().findLeafBinContaining(point);
 	}
 
 	private SpatialBin getRootBin() {
@@ -147,9 +168,9 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 		return list;
 	}
 
-	private class SpatialBin extends Box3D {
+	protected class SpatialBin extends Box3D {
 
-		private Collection<Object3D> containedObjects; // leafs only, 'null' for ancestors
+		private List<Object3D> containedObjects; // leafs only, 'null' for ancestors
 
 		private int depthInTree; // zero at root
 
@@ -161,12 +182,12 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 
 		private static final double emptySpaceCarveoutThreshold = 0.25; // minimum proportion (between 0 and 1)
 
-		public SpatialBin(Collection<Object3D> containedObjects, Box3D bounds) {
+		public SpatialBin(List<Object3D> containedObjects, Box3D bounds) {
 			this(containedObjects, bounds.getX1(), bounds.getX2(), bounds.getY1(), bounds.getY2(), bounds.getZ1(),
 					bounds.getZ2());
 		}
 
-		public SpatialBin(Collection<Object3D> containedObjects, double x1, double x2, double y1, double y2, double z1,
+		public SpatialBin(List<Object3D> containedObjects, double x1, double x2, double y1, double y2, double z1,
 				double z2) {
 			super(x1, x2, y1, y2, z1, z2);
 			setNeighbors(new BinNeighbors());
@@ -229,7 +250,7 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 				double sFront = getZ2() - bbox.getZ2();
 				double sx = Math.max(sLeft, sRight);
 				double sy = Math.max(sBottom, sTop);
-				double sz = Math.max(sBack, sFront);
+				double sz = splitBinsExclusivelyInXY() ? -1.0 : Math.max(sBack, sFront);
 				if (sx >= st && sx >= sy && sx >= sz) {
 					cut = new BinCut(Dimension.X, sLeft >= sRight ? bbox.getX1() : bbox.getX2());
 				} else if (sy >= st && sy >= sx && sy >= sz) {
@@ -240,7 +261,7 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 					// Otherwise divide the objects evenly along the longest dimension
 					double w = bbox.getWidth();
 					double h = bbox.getHeight();
-					double d = bbox.getDepth();
+					double d = splitBinsExclusivelyInXY() ? -1.0 : bbox.getDepth();
 					if (w >= h && w >= d) {
 						cut = new BinCut(Dimension.X, (bbox.getX1() + bbox.getX2()) / 2);
 					} else if (h >= w && h >= d) {
@@ -265,7 +286,7 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 				double z1 = Dimension.Z.equals(dim) && i == 1 ? c : getZ1();
 				double z2 = Dimension.Z.equals(dim) && i == 0 ? c : getZ2();
 				Box3D bounds = new Box3D(x1, x2, y1, y2, z1, z2);
-				Collection<Object3D> objects = getContainedObjectsOverlapping(bounds);
+				List<Object3D> objects = getContainedObjectsOverlapping(bounds);
 				SpatialBin bin = new SpatialBin(objects, bounds);
 				bin.setDepthInTree(getDepthInTree() + 1);
 				bin.setParent(this);
@@ -279,12 +300,14 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 		}
 
 		private void reallocateNeighbors(BinSplit split) {
-			reallocateNeighbors(split, BinSide.LEFT);
-			reallocateNeighbors(split, BinSide.RIGHT);
-			reallocateNeighbors(split, BinSide.BOTTOM);
-			reallocateNeighbors(split, BinSide.TOP);
-			reallocateNeighbors(split, BinSide.BACK);
-			reallocateNeighbors(split, BinSide.FRONT);
+			if (keepTrackOfBinNeighbors()) {
+				reallocateNeighbors(split, BinSide.LEFT);
+				reallocateNeighbors(split, BinSide.RIGHT);
+				reallocateNeighbors(split, BinSide.BOTTOM);
+				reallocateNeighbors(split, BinSide.TOP);
+				reallocateNeighbors(split, BinSide.BACK);
+				reallocateNeighbors(split, BinSide.FRONT);
+			}
 			setNeighbors(null); // spread over child bins
 		}
 
@@ -340,7 +363,7 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 					Box3D clippedBox = objectBox.getIntersection(this);
 					if (bbox == null) {
 						bbox = clippedBox;
-					} else {
+					} else if (clippedBox != null) {
 						bbox.expandToContain(clippedBox);
 					}
 				}
@@ -348,8 +371,8 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 			return bbox;
 		}
 
-		private Collection<Object3D> getContainedObjectsOverlapping(Box3D box) {
-			Collection<Object3D> overlappingObjects = new Vector<Object3D>(1 + getContainedObjectCount() / 8);
+		private List<Object3D> getContainedObjectsOverlapping(Box3D box) {
+			List<Object3D> overlappingObjects = new Vector<Object3D>(1 + getContainedObjectCount() / 8);
 			for (Object3D object : getContainedObjects()) {
 				boolean overlaps = true;
 				if (object.isBounded()) {
@@ -381,6 +404,10 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 			} else {
 				return getZ2();
 			}
+		}
+
+		public SpatialBin findLeafBinContaining(Point3D point) {
+			return findLeafBinContaining(point, BinSide.LEFT, BinSide.BOTTOM, BinSide.BACK);
 		}
 
 		public SpatialBin findLeafBinContaining(Point3D point, BinSide xAffinity, BinSide yAffinity, BinSide zAffinity) {
@@ -443,11 +470,11 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 			return getContainedObjects().size();
 		}
 
-		public Collection<Object3D> getContainedObjects() {
+		public List<Object3D> getContainedObjects() {
 			return containedObjects;
 		}
 
-		private void setContainedObjects(Collection<Object3D> objects) {
+		private void setContainedObjects(List<Object3D> objects) {
 			this.containedObjects = objects;
 		}
 
@@ -917,7 +944,7 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 		@Override
 		public int getBinCount() {
 			int count = 0;
-			for (DepthFirstLeafBinIterator it = new DepthFirstLeafBinIterator(getRootBin()); it.hasNext(); it.next()) {
+			for (Iterator<SpatialBin> it = getDepthFirstLeafBinIterator(); it.hasNext(); it.next()) {
 				count++;
 			}
 			return count;
@@ -926,7 +953,7 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 		@Override
 		public int getEmptyBins() {
 			int empty = 0;
-			for (DepthFirstLeafBinIterator it = new DepthFirstLeafBinIterator(getRootBin()); it.hasNext();) {
+			for (Iterator<SpatialBin> it = getDepthFirstLeafBinIterator(); it.hasNext();) {
 				if (it.next().isEmpty())
 					empty++;
 			}
@@ -936,7 +963,7 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 		@Override
 		public int getMaximumObjectsPerBin() {
 			int max = 0;
-			for (DepthFirstLeafBinIterator it = new DepthFirstLeafBinIterator(getRootBin()); it.hasNext();) {
+			for (Iterator<SpatialBin> it = getDepthFirstLeafBinIterator(); it.hasNext();) {
 				max = Math.max(max, it.next().getContainedObjectCount());
 			}
 			return max;
@@ -955,7 +982,7 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 		private double computeAverageObjectsPerBin(boolean includeEmptyBins) {
 			int sum = 0;
 			int count = 0;
-			for (DepthFirstLeafBinIterator it = new DepthFirstLeafBinIterator(getRootBin()); it.hasNext();) {
+			for (Iterator<SpatialBin> it = getDepthFirstLeafBinIterator(); it.hasNext();) {
 				int n = it.next().getContainedObjectCount();
 				if (n == 0) {
 					if (includeEmptyBins)
@@ -974,7 +1001,7 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 		public double getAverageObjectsPerUnitSpace() {
 			double weightedSum = 0;
 			double totalVolume = 0;
-			for (DepthFirstLeafBinIterator it = new DepthFirstLeafBinIterator(getRootBin()); it.hasNext();) {
+			for (Iterator<SpatialBin> it = getDepthFirstLeafBinIterator(); it.hasNext();) {
 				SpatialBin bin = it.next();
 				double binVolume = bin.getWidth() * bin.getHeight() * bin.getDepth();
 				weightedSum += binVolume * bin.getContainedObjectCount();
@@ -1004,7 +1031,7 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 			int n = getClassCount();
 			int size = getClassRangeSize();
 			int[] values = new int[n];
-			for (DepthFirstLeafBinIterator it = new DepthFirstLeafBinIterator(getRootBin()); it.hasNext();) {
+			for (Iterator<SpatialBin> it = getDepthFirstLeafBinIterator(); it.hasNext();) {
 				int count = it.next().getContainedObjectCount();
 				if (count > 0) {
 					// Excluding empty bins

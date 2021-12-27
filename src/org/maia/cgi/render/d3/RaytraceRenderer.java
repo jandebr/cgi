@@ -1,4 +1,4 @@
-package org.maia.cgi.render.d3.raytrace;
+package org.maia.cgi.render.d3;
 
 import java.awt.Color;
 import java.util.Collection;
@@ -19,24 +19,24 @@ import org.maia.cgi.geometry.d2.Rectangle2D;
 import org.maia.cgi.geometry.d3.LineSegment3D;
 import org.maia.cgi.geometry.d3.Point3D;
 import org.maia.cgi.model.d3.camera.ViewVolume;
+import org.maia.cgi.model.d3.object.Object3D;
 import org.maia.cgi.model.d3.object.ObjectSurfacePoint3D;
 import org.maia.cgi.model.d3.object.ObjectSurfacePoint3DImpl;
-import org.maia.cgi.model.d3.object.RaytraceableObject3D;
 import org.maia.cgi.model.d3.scene.Scene;
 import org.maia.cgi.model.d3.scene.SceneUtils;
-import org.maia.cgi.render.d2.TextureMapRegistry;
-import org.maia.cgi.render.d3.BaseSceneRenderer;
-import org.maia.cgi.render.d3.RenderOptions;
+import org.maia.cgi.model.d3.scene.index.SceneObjectViewPlaneIndex;
 import org.maia.cgi.render.d3.view.ColorDepthBuffer;
 import org.maia.cgi.render.d3.view.ViewPort;
 
 public class RaytraceRenderer extends BaseSceneRenderer {
 
-	private static final String STEP_LABEL_RAYTRACE = "Raytrace";
+	private static final String STEP_LABEL_INITIALIZE = "Initializing";
 
-	private static final String STEP_LABEL_DEPTHBLUR_COMPUTE = "Compute depth blur";
+	private static final String STEP_LABEL_RAYTRACE = "Raytracing";
 
-	private static final String STEP_LABEL_DEPTHBLUR_RENDER = "Render depth blur";
+	private static final String STEP_LABEL_DEPTHBLUR_COMPUTE = "Computing depth blur";
+
+	private static final String STEP_LABEL_DEPTHBLUR_RENDER = "Rendering depth blur";
 
 	public RaytraceRenderer() {
 	}
@@ -44,6 +44,7 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 	@Override
 	protected void renderImpl(Scene scene, Collection<ViewPort> outputs, RenderOptions options) {
 		RenderState state = new RenderState(scene, options);
+		renderInit(state);
 		renderRaster(state, outputs);
 		if (state.shouldApplyDepthBlur()) {
 			applyDepthBlur(state, outputs);
@@ -51,9 +52,20 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 		System.out.println(Metrics.getInstance());
 	}
 
-	private synchronized void renderRaster(RenderState state, Collection<ViewPort> outputs) {
-		state.getScene().getSpatialIndex(); // create index upfront (in single thread!)
+	private void renderInit(RenderState state) {
+		Scene scene = state.getScene();
+		int steps = state.getTotalSteps();
+		int step = state.getCurrentStep();
+		fireRenderingProgressUpdate(scene, steps, step, 0.0, STEP_LABEL_INITIALIZE);
+		scene.getSpatialIndex(); // create spatial index upfront (in single thread!)
+		fireRenderingProgressUpdate(scene, steps, step, 0.5, STEP_LABEL_INITIALIZE);
+		scene.getViewPlaneIndex(); // create view plane index upfront (in single thread!)
+		fireRenderingProgressUpdate(scene, steps, step, 1.0, STEP_LABEL_INITIALIZE);
 		System.out.println(state);
+	}
+
+	private synchronized void renderRaster(RenderState state, Collection<ViewPort> outputs) {
+		state.incrementStep();
 		ThreadGroup workers = new ThreadGroup("Raytrace workers");
 		int n = state.getOptions().getSafeNumberOfRenderThreads();
 		System.out.println("Spawning " + n + " raytrace worker" + (n > 1 ? "s" : ""));
@@ -128,8 +140,6 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 
 		private ConvolutionMatrix pixelAveragingConvolutionMatrix;
 
-		private RaytraceableObjectViewPlaneIndex objectIndex;
-
 		private int currentStep;
 
 		private int totalSteps;
@@ -148,26 +158,10 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 					* getSamplesPerPixelY(), options.getSceneBackgroundColor());
 			this.pixelAveragingConvolutionMatrix = Convolution.getScaledGaussianBlurMatrix(getSamplesPerPixelY(),
 					getSamplesPerPixelX(), 2.0);
-			int xBins = Math.min((int) Math.ceil(getPixelWidth() * getSamplesPerPixelX() / 4), 500);
-			int yBins = Math.min((int) Math.ceil(getPixelHeight() * getSamplesPerPixelY() / 4), 500);
-			this.objectIndex = new RaytraceableObjectViewPlaneIndex(scene.getCamera(), xBins, yBins);
 			this.currentStep = 0;
-			this.totalSteps = shouldApplyDepthBlur() ? 3 : 1;
+			this.totalSteps = shouldApplyDepthBlur() ? 4 : 2;
 			this.nextRenderLineIndex = 0;
 			this.activeRenderRasterWorkers = 0;
-			init();
-		}
-
-		private void init() {
-			getObjectIndex().addAllRaytraceableObjectsFromScene(getScene());
-			getObjectIndex().sortBinnedObjectsByIncreasingDepth();
-			int n = getObjectIndex().getBinStatistics().getMaximumObjectsPerBinRow();
-			int c = TextureMapRegistry.getInstance().getCapacity();
-			if (c < n) {
-				System.err
-						.println("WARNING: Texture map swapping could occur. Consider increasing TextureMapRegistry's capacity (now "
-								+ c + "). A safe value would be " + n);
-			}
 		}
 
 		@Override
@@ -257,8 +251,8 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 			return pixelAveragingConvolutionMatrix;
 		}
 
-		private RaytraceableObjectViewPlaneIndex getObjectIndex() {
-			return objectIndex;
+		private SceneObjectViewPlaneIndex getObjectIndex() {
+			return getScene().getViewPlaneIndex();
 		}
 
 		public int getCurrentStep() {
@@ -393,11 +387,13 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 			RenderState state = getState();
 			Scene scene = state.getScene();
 			Point3D pointOnViewPlane = ray.getP1();
-			List<RaytraceableObject3D> objects = state.getObjectIndex().getObjects(pointOnViewPlane.getX(),
-					pointOnViewPlane.getY());
+			List<Object3D> objects = state.getObjectIndex().getObjects(pointOnViewPlane);
 			if (objects != null) {
-				for (RaytraceableObject3D object : objects) {
-					object.intersectWithEyeRay(ray, scene, intersections, state.getOptions());
+				for (Object3D object : objects) {
+					if (object.isRaytraceable()) {
+						object.asRaytraceableObject()
+								.intersectWithEyeRay(ray, scene, intersections, state.getOptions());
+					}
 				}
 			}
 			// From backdrop, if any

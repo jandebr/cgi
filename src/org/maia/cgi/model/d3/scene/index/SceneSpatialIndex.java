@@ -19,6 +19,8 @@ public abstract class SceneSpatialIndex {
 		this.scene = scene;
 	}
 
+	public abstract void buildIndex();
+
 	public abstract void dispose();
 
 	/**
@@ -41,16 +43,16 @@ public abstract class SceneSpatialIndex {
 		return getScene().getBoundingBox(CoordinateFrame.CAMERA);
 	}
 
-	protected Collection<Object3D> getSceneObjects() {
-		return SceneUtils.getAllIndividualObjectsInScene(getScene());
-	}
-
 	protected Box3D getObjectBox(Object3D object) {
 		Box3D box = null;
 		if (object.isBounded()) {
 			box = object.asBoundedObject().getBoundingBox(CoordinateFrame.CAMERA, getScene().getCamera());
 		}
 		return box;
+	}
+
+	protected Collection<Object3D> getSceneObjects() {
+		return SceneUtils.getAllIndividualObjectsInScene(getScene());
 	}
 
 }

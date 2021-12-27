@@ -414,7 +414,7 @@ public class RenderFrame extends JFrame implements SceneRendererProgressTracker,
 	}
 
 	private void showZeroProgress() {
-		showProgress(0, -1, 0.0, "Initialize...");
+		showProgress(0, -1, 0.0, "Start rendering...");
 	}
 
 	protected void showProgress(int totalSteps, int stepIndex, double stepProgress, String stepLabel) {

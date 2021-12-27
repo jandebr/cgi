@@ -1,4 +1,4 @@
-package org.maia.cgi.render.d3.wireframe;
+package org.maia.cgi.render.d3;
 
 import java.awt.Color;
 import java.util.Collection;
@@ -13,14 +13,12 @@ import org.maia.cgi.model.d3.object.Mesh3DImpl;
 import org.maia.cgi.model.d3.object.MeshObject3D;
 import org.maia.cgi.model.d3.scene.Scene;
 import org.maia.cgi.model.d3.scene.SceneUtils;
-import org.maia.cgi.render.d3.BaseSceneRenderer;
-import org.maia.cgi.render.d3.RenderOptions;
 import org.maia.cgi.render.d3.view.ViewPort;
 import org.maia.cgi.transform.d3.TransformMatrix;
 
 public class WireframeRenderer extends BaseSceneRenderer {
 
-	private static final String STEP_LABEL_RENDER = "Render wireframe";
+	private static final String STEP_LABEL_RENDER = "Rendering wireframe";
 
 	public WireframeRenderer() {
 	}

@@ -14,6 +14,7 @@ import org.maia.cgi.model.d3.camera.Camera;
 import org.maia.cgi.model.d3.camera.CameraObserver;
 import org.maia.cgi.model.d3.light.LightSource;
 import org.maia.cgi.model.d3.object.Object3D;
+import org.maia.cgi.model.d3.scene.index.SceneObjectViewPlaneIndex;
 import org.maia.cgi.model.d3.scene.index.SceneSpatialIndex;
 import org.maia.cgi.model.d3.scene.index.SceneSpatialIndexFactory;
 import org.maia.cgi.render.d3.view.ColorDepthBuffer;
@@ -40,6 +41,8 @@ public class Scene implements CameraObserver {
 	private double distanceOutsideScene = -1.0;
 
 	private SceneSpatialIndex spatialIndex;
+
+	private SceneObjectViewPlaneIndex viewPlaneIndex;
 
 	private ColorDepthBuffer backdrop;
 
@@ -129,6 +132,7 @@ public class Scene implements CameraObserver {
 
 	private void invalidateSpatialIndex() {
 		spatialIndex = null;
+		viewPlaneIndex = null;
 	}
 
 	public double getDistanceOutsideScene() {
@@ -141,9 +145,16 @@ public class Scene implements CameraObserver {
 
 	public SceneSpatialIndex getSpatialIndex() {
 		if (spatialIndex == null) {
-			spatialIndex = SceneSpatialIndexFactory.getInstance().createIndex(this);
+			spatialIndex = SceneSpatialIndexFactory.getInstance().createSpatialIndex(this);
 		}
 		return spatialIndex;
+	}
+
+	public SceneObjectViewPlaneIndex getViewPlaneIndex() {
+		if (viewPlaneIndex == null) {
+			viewPlaneIndex = SceneSpatialIndexFactory.getInstance().createViewPlaneIndex(this);
+		}
+		return viewPlaneIndex;
 	}
 
 	public String getName() {

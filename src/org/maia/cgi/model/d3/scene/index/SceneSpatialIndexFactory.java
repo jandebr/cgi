@@ -23,7 +23,7 @@ public class SceneSpatialIndexFactory {
 		}
 	}
 
-	public SceneSpatialIndex createIndex(Scene scene) {
+	public SceneSpatialIndex createSpatialIndex(Scene scene) {
 		SceneSpatialIndex index = null;
 		BinnedSceneSpatialIndex uniformIndex = createUniformlyBinnedIndex(scene);
 		BinnedSceneSpatialIndex nonUniformIndex = createNonUniformlyBinnedIndex(scene);
@@ -41,12 +41,22 @@ public class SceneSpatialIndexFactory {
 		return index;
 	}
 
+	public SceneObjectViewPlaneIndex createViewPlaneIndex(Scene scene) {
+		SceneObjectViewPlaneIndex index = new SceneObjectViewPlaneIndex(scene, 250000);
+		index.buildIndex();
+		return index;
+	}
+
 	private BinnedSceneSpatialIndex createUniformlyBinnedIndex(Scene scene) {
-		return new UniformlyBinnedSceneSpatialIndex(scene, 50, 50, 50);
+		BinnedSceneSpatialIndex index = new UniformlyBinnedSceneSpatialIndex(scene, 50, 50, 50);
+		index.buildIndex();
+		return index;
 	}
 
 	private BinnedSceneSpatialIndex createNonUniformlyBinnedIndex(Scene scene) {
-		return new NonUniformlyBinnedSceneSpatialIndex(scene, 125000);
+		BinnedSceneSpatialIndex index = new NonUniformlyBinnedSceneSpatialIndex(scene, 125000);
+		index.buildIndex();
+		return index;
 	}
 
 }
