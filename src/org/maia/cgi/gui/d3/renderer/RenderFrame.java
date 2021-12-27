@@ -11,7 +11,6 @@ import java.awt.event.ActionEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.lang.management.ManagementFactory;
 import java.lang.reflect.InvocationTargetException;
 import java.text.NumberFormat;
 
@@ -37,6 +36,7 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+import org.maia.cgi.CGISystem;
 import org.maia.cgi.Metrics;
 import org.maia.cgi.gui.GradientButton;
 import org.maia.cgi.gui.d3.renderer.RenderOptionsPanel.RenderOptionsPanelObserver;
@@ -49,8 +49,6 @@ import org.maia.cgi.render.d3.RenderOptions.RenderMode;
 import org.maia.cgi.render.d3.SceneRenderer;
 import org.maia.cgi.render.d3.SceneRendererProgressTracker;
 import org.maia.cgi.render.d3.view.ViewPort;
-
-import com.sun.management.OperatingSystemMXBean;
 
 @SuppressWarnings("serial")
 public class RenderFrame extends JFrame implements SceneRendererProgressTracker, CameraObserver,
@@ -320,6 +318,7 @@ public class RenderFrame extends JFrame implements SceneRendererProgressTracker,
 	}
 
 	private void unloadScene() {
+		CGISystem.releaseMemory(getScene());
 		getScene().getCamera().removeObserver(this);
 		getCameraControlsPanel().disconnectCamera();
 		getRenderOptionsPanel().restoreRenderOptionsSize();
@@ -401,7 +400,7 @@ public class RenderFrame extends JFrame implements SceneRendererProgressTracker,
 		getRenderPane().repaint();
 		if (isInRealisticRenderMode()) {
 			clearProgress();
-			System.gc();
+			CGISystem.releaseMemory();
 		}
 		if (isInRealisticRenderMode() || !getCameraControlsPanel().isRepeatActivated()) {
 			enableRenderPanel();
@@ -454,11 +453,9 @@ public class RenderFrame extends JFrame implements SceneRendererProgressTracker,
 	}
 
 	protected void showSystemUsage() {
-		OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
-		Runtime rt = Runtime.getRuntime();
-		double cpuLoad = Math.max(0, osBean.getSystemCpuLoad());
-		long totalMemory = rt.totalMemory();
-		long usedMemory = totalMemory - rt.freeMemory();
+		double cpuLoad = CGISystem.getCpuLoad();
+		long totalMemory = CGISystem.getTotalMemoryInBytes();
+		long usedMemory = CGISystem.getUsedMemoryInBytes();
 		long usedMemoryMB = usedMemory / (1024 * 1024);
 		double usedMemoryRatio = usedMemory / (double) totalMemory;
 		getCpuUsageLabel().setText("CPU " + percentageFormat.format(cpuLoad));

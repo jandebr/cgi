@@ -1,5 +1,6 @@
 package org.maia.cgi.model.d3.scene.index;
 
+import org.maia.cgi.CGISystem;
 import org.maia.cgi.model.d3.scene.Scene;
 import org.maia.cgi.model.d3.scene.index.BinnedSceneSpatialIndex.BinStatistics;
 
@@ -37,7 +38,7 @@ public class SceneSpatialIndexFactory {
 			index = uniformIndex;
 			nonUniformIndex.dispose();
 		}
-		System.gc();
+		CGISystem.releaseMemory();
 		return index;
 	}
 

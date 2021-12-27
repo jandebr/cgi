@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
 
+import org.maia.cgi.MemorizedCompute;
 import org.maia.cgi.Metrics;
 import org.maia.cgi.compose.d3.DepthBlurParameters;
 import org.maia.cgi.compose.d3.DepthFunction;
@@ -19,7 +20,7 @@ import org.maia.cgi.model.d3.scene.index.SceneSpatialIndex;
 import org.maia.cgi.model.d3.scene.index.SceneSpatialIndexFactory;
 import org.maia.cgi.render.d3.view.ColorDepthBuffer;
 
-public class Scene implements CameraObserver {
+public class Scene implements CameraObserver, MemorizedCompute {
 
 	/**
 	 * A descriptive name for the scene.
@@ -63,7 +64,7 @@ public class Scene implements CameraObserver {
 
 	public void addTopLevelObject(Object3D object) {
 		invalidateBoundingBoxes();
-		invalidateSpatialIndex();
+		invalidateSpatialIndices();
 		getTopLevelObjects().add(object);
 		object.cameraHasChanged(getCamera());
 	}
@@ -85,7 +86,7 @@ public class Scene implements CameraObserver {
 	@Override
 	public void cameraHasChanged(Camera camera) {
 		invalidateCameraBoundingBox();
-		invalidateSpatialIndex();
+		invalidateSpatialIndices();
 		// Objects
 		for (Object3D object : getTopLevelObjects()) {
 			object.cameraHasChanged(camera);
@@ -94,6 +95,11 @@ public class Scene implements CameraObserver {
 		for (LightSource light : getLightSources()) {
 			light.cameraHasChanged(camera);
 		}
+	}
+
+	@Override
+	public void releaseMemory() {
+		invalidateSpatialIndices();
 	}
 
 	public Box3D getBoundingBox(CoordinateFrame cframe) {
@@ -130,7 +136,7 @@ public class Scene implements CameraObserver {
 		boundingBoxes.remove(CoordinateFrame.CAMERA);
 	}
 
-	private void invalidateSpatialIndex() {
+	private void invalidateSpatialIndices() {
 		spatialIndex = null;
 		viewPlaneIndex = null;
 	}
