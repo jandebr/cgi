@@ -14,6 +14,7 @@ import org.maia.cgi.geometry.d3.Point3D;
 import org.maia.cgi.model.d3.object.Object3D;
 import org.maia.cgi.model.d3.object.ObjectSurfacePoint3D;
 import org.maia.cgi.model.d3.scene.Scene;
+import org.maia.cgi.render.d3.ReusableObjectPack;
 
 /**
  * Spatial index of a Scene's objects in camera coordinates as a Cartesian grid of unit cubes called "bins"
@@ -66,8 +67,8 @@ public class UniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex {
 	}
 
 	@Override
-	public Iterator<ObjectSurfacePoint3D> getObjectIntersections(LineSegment3D line) {
-		return new ObjectLineIntersectionsIteratorImpl(line);
+	public Iterator<ObjectSurfacePoint3D> getObjectIntersections(LineSegment3D line, ReusableObjectPack reusableObjects) {
+		return new ObjectLineIntersectionsIteratorImpl(line, reusableObjects);
 	}
 
 	private void addObject(Object3D object) {
@@ -253,8 +254,8 @@ public class UniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex {
 
 		private boolean proceed;
 
-		public ObjectLineIntersectionsIteratorImpl(LineSegment3D line) {
-			super(line);
+		public ObjectLineIntersectionsIteratorImpl(LineSegment3D line, ReusableObjectPack reusableObjects) {
+			super(line, reusableObjects);
 			Point3D p1 = line.getP1();
 			Point3D p2 = line.getP2();
 			// init X
@@ -290,7 +291,7 @@ public class UniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex {
 		}
 
 		@Override
-		protected void provisionIntersections() {
+		protected void provisionIntersections(ReusableObjectPack reusableObjects) {
 			// traverse bins along the line to add objects
 			List<ObjectSurfacePoint3D> intersections = getIntersections();
 			Set<Object3D> objects = getObjects();
@@ -303,7 +304,8 @@ public class UniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex {
 				if (currentObjects != null && currentObjects.hasNext()) {
 					Object3D object = currentObjects.next();
 					if (objects.add(object) && object.isRaytraceable()) {
-						object.asRaytraceableObject().intersectWithLightRay(getLine(), getScene(), intersections);
+						object.asRaytraceableObject().intersectWithLightRay(getLine(), getScene(), intersections,
+								reusableObjects);
 					}
 				} else {
 					currentObjects = null;
@@ -330,7 +332,7 @@ public class UniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex {
 
 	}
 
-	public class UniformBinStatistics extends BinStatistics {
+	private class UniformBinStatistics extends BinStatistics {
 
 		public UniformBinStatistics() {
 		}
@@ -417,7 +419,7 @@ public class UniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex {
 
 	}
 
-	public class ObjectsPerBinHistogramImpl extends ObjectsPerBinHistogram {
+	private class ObjectsPerBinHistogramImpl extends ObjectsPerBinHistogram {
 
 		public ObjectsPerBinHistogramImpl(int classCount, int classRangeSize) {
 			super(classCount, classRangeSize);

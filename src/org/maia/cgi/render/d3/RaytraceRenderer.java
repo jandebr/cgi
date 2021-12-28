@@ -303,6 +303,8 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 
 		private RenderState state;
 
+		private ReusableObjectPack reusableObjects; // for use by this worker thread only (not thread-safe!)
+
 		private Collection<ViewPort> outputs;
 
 		private List<ObjectSurfacePoint3D> intersections; // reusable
@@ -313,6 +315,7 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 
 		public RenderRasterWorker(RenderState state, Collection<ViewPort> outputs) {
 			this.state = state;
+			this.reusableObjects = new ReusableObjectPack();
 			this.outputs = outputs;
 			this.intersections = new Vector<ObjectSurfacePoint3D>();
 			this.colorList = new Vector<Color>();
@@ -399,20 +402,22 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 			intersections.clear();
 			// From scene objects
 			RenderState state = getState();
+			RenderOptions options = state.getOptions();
 			Scene scene = state.getScene();
 			Point3D pointOnViewPlane = ray.getP1();
-			List<Object3D> objects = state.getObjectIndex().getObjects(pointOnViewPlane);
+			ReusableObjectPack reusableObjects = getReusableObjects();
+			List<Object3D> objects = state.getObjectIndex().getObjects(pointOnViewPlane, reusableObjects);
 			if (objects != null) {
 				for (Object3D object : objects) {
 					if (object.isRaytraceable()) {
-						object.asRaytraceableObject()
-								.intersectWithEyeRay(ray, scene, intersections, state.getOptions());
+						object.asRaytraceableObject().intersectWithEyeRay(ray, scene, intersections, options,
+								reusableObjects);
 					}
 				}
 			}
 			// From backdrop, if any
 			ColorDepthBuffer backDrop = scene.getBackdrop();
-			if (backDrop != null && getState().getOptions().isBackdropEnabled()) {
+			if (backDrop != null && options.isBackdropEnabled()) {
 				Color color = backDrop.getColor(ix, iy);
 				double depth = backDrop.getDepth(ix, iy);
 				double z = -depth;
@@ -472,6 +477,10 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 
 		private RenderState getState() {
 			return state;
+		}
+
+		private ReusableObjectPack getReusableObjects() {
+			return reusableObjects;
 		}
 
 		private Collection<ViewPort> getOutputs() {

@@ -1,29 +1,32 @@
 package org.maia.cgi.model.d3.scene.index;
 
-import java.util.Collection;
 import java.util.Iterator;
-import java.util.Vector;
 
-import org.maia.cgi.Memoise;
-import org.maia.cgi.geometry.d3.Box3D;
 import org.maia.cgi.geometry.d3.LineSegment3D;
-import org.maia.cgi.model.d3.CoordinateFrame;
-import org.maia.cgi.model.d3.object.Object3D;
 import org.maia.cgi.model.d3.object.ObjectSurfacePoint3D;
 import org.maia.cgi.model.d3.scene.Scene;
-import org.maia.cgi.model.d3.scene.SceneUtils;
+import org.maia.cgi.render.d3.ReusableObjectPack;
 
-public abstract class SceneSpatialIndex implements Memoise {
+/**
+ * Spatial index of a Scene's objects in camera coordinates
+ * 
+ * <p>
+ * The spatial index is constructed based on the current positions and orientations of the objects in the scene and the
+ * camera. It is the responsability of the client code to create a new index to reflect an updated snapshot of that
+ * scene.
+ * </p>
+ */
+public interface SceneSpatialIndex {
 
-	private Scene scene;
+	/**
+	 * Builds the index from the scene's objects in their current camera coordinates
+	 */
+	void buildIndex();
 
-	protected SceneSpatialIndex(Scene scene) {
-		this.scene = scene;
-	}
-
-	public abstract void buildIndex();
-
-	public abstract void dispose();
+	/**
+	 * Disposes the index to free up memory, after which it cannot be used anymore
+	 */
+	void dispose();
 
 	/**
 	 * Returns the scene objects that intersect with the given line segment
@@ -32,42 +35,18 @@ public abstract class SceneSpatialIndex implements Memoise {
 	 *            The line segment, in camera coordinates. The segment is assumed to be <i>closed</i> on both ends AND
 	 *            the first point {@link LineSegment3D#getP1()} is assumed to lie within the scene's bounding box, in
 	 *            camera coordinates
+	 * @param reusableObjects
+	 *            Objects that can be reused in the context of the current thread
 	 * @return An iterator over the scene objects intersecting with <code>line</code>. The order of the objects is
 	 *         undefined
 	 */
-	public abstract Iterator<ObjectSurfacePoint3D> getObjectIntersections(LineSegment3D line);
+	Iterator<ObjectSurfacePoint3D> getObjectIntersections(LineSegment3D line, ReusableObjectPack reusableObjects);
 
-	public Scene getScene() {
-		return scene;
-	}
-
-	protected Collection<Object3D> getIndexedObjects() {
-		Collection<Object3D> sceneObjects = SceneUtils.getAllIndividualObjectsInScene(getScene());
-		Collection<Object3D> indexedObjects = new Vector<Object3D>(sceneObjects.size());
-		Box3D sceneBox = getSceneBox();
-		for (Object3D object : sceneObjects) {
-			boolean overlaps = true;
-			if (object.isBounded()) {
-				Box3D objectBox = getObjectBox(object);
-				overlaps = objectBox != null && objectBox.overlaps(sceneBox);
-			}
-			if (overlaps) {
-				indexedObjects.add(object);
-			}
-		}
-		return indexedObjects;
-	}
-
-	protected Box3D getSceneBox() {
-		return getScene().getBoundingBox(CoordinateFrame.CAMERA);
-	}
-
-	protected Box3D getObjectBox(Object3D object) {
-		Box3D box = null;
-		if (object.isBounded()) {
-			box = object.asBoundedObject().getBoundingBox(CoordinateFrame.CAMERA, getScene().getCamera());
-		}
-		return box;
-	}
+	/**
+	 * Returns the scene for which this is a spatial index
+	 * 
+	 * @return The scene
+	 */
+	Scene getScene();
 
 }

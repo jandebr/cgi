@@ -14,6 +14,7 @@ import org.maia.cgi.model.d3.CoordinateFrame;
 import org.maia.cgi.model.d3.camera.Camera;
 import org.maia.cgi.model.d3.scene.Scene;
 import org.maia.cgi.render.d3.RenderOptions;
+import org.maia.cgi.render.d3.ReusableObjectPack;
 import org.maia.cgi.transform.d3.TransformMatrix;
 import org.maia.cgi.transform.d3.Transformation;
 import org.maia.cgi.transform.d3.TwoWayCompositeTransform;
@@ -287,9 +288,9 @@ public abstract class BaseObject3D implements BoundedObject3D, ComposableObject3
 
 	@Override
 	public void intersectWithEyeRay(LineSegment3D ray, Scene scene, Collection<ObjectSurfacePoint3D> intersections,
-			RenderOptions options) {
+			RenderOptions options, ReusableObjectPack reusableObjects) {
 		int n = intersections.size();
-		intersectSelfWithRay(ray, scene, intersections, options, true, true);
+		intersectSelfWithRay(ray, scene, intersections, options, reusableObjects, true, true);
 		Metrics.getInstance().incrementEyeRayWithObjectIntersectionChecks();
 		if (intersections.size() > n) {
 			Metrics.getInstance().incrementEyeRayWithObjectIntersections();
@@ -297,9 +298,10 @@ public abstract class BaseObject3D implements BoundedObject3D, ComposableObject3
 	}
 
 	@Override
-	public void intersectWithLightRay(LineSegment3D ray, Scene scene, Collection<ObjectSurfacePoint3D> intersections) {
+	public void intersectWithLightRay(LineSegment3D ray, Scene scene, Collection<ObjectSurfacePoint3D> intersections,
+			ReusableObjectPack reusableObjects) {
 		int n = intersections.size();
-		intersectSelfWithRay(ray, scene, intersections, null, false, false);
+		intersectSelfWithRay(ray, scene, intersections, null, reusableObjects, false, false);
 		Metrics.getInstance().incrementLightRayWithObjectIntersectionChecks();
 		if (intersections.size() > n) {
 			Metrics.getInstance().incrementLightRayWithObjectIntersections();
@@ -307,7 +309,7 @@ public abstract class BaseObject3D implements BoundedObject3D, ComposableObject3
 	}
 
 	protected abstract void intersectSelfWithRay(LineSegment3D ray, Scene scene,
-			Collection<ObjectSurfacePoint3D> intersections, RenderOptions options, boolean applyShading,
-			boolean rayFromEye);
+			Collection<ObjectSurfacePoint3D> intersections, RenderOptions options, ReusableObjectPack reusableObjects,
+			boolean applyShading, boolean rayFromEye);
 
 }

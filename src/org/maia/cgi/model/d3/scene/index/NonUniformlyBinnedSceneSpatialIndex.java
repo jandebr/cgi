@@ -14,6 +14,7 @@ import org.maia.cgi.geometry.d3.Point3D;
 import org.maia.cgi.model.d3.object.Object3D;
 import org.maia.cgi.model.d3.object.ObjectSurfacePoint3D;
 import org.maia.cgi.model.d3.scene.Scene;
+import org.maia.cgi.render.d3.ReusableObjectPack;
 
 /**
  * Spatial index of a Scene's objects in camera coordinates as a rectilinear grid of cuboids called "bins"
@@ -56,8 +57,6 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 
 	private int maximumLeafBins;
 
-	private ThreadLocal<List<BinSide>> reusableDirectionsList;
-
 	public NonUniformlyBinnedSceneSpatialIndex(Scene scene, int maximumLeafBins) {
 		this(scene, 1, 1, 29, maximumLeafBins);
 	}
@@ -71,12 +70,6 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 		this.maximumLeafBins = maximumLeafBins;
 	}
 
-	@Override
-	protected void init() {
-		super.init();
-		this.reusableDirectionsList = new ThreadLocal<List<BinSide>>();
-	}
-
 	public void printBins() {
 		System.out.println(getRootBin());
 	}
@@ -86,11 +79,12 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 		setRootBin(createRootBin());
 		int leafs = 1; // root bin is a leaf initially
 		int maxLeafs = getMaximumLeafBins();
+		ReusableObjectPack reusableObjects = new ReusableObjectPack();
 		Deque<SpatialBin> queue = new LinkedList<SpatialBin>();
 		queue.add(getRootBin());
 		while (!queue.isEmpty() && leafs < maxLeafs) {
 			SpatialBin bin = queue.pollFirst();
-			if (bin.split()) {
+			if (bin.split(reusableObjects)) {
 				// Breadth-first traversal, to balance the bounded-size tree in depth
 				queue.addLast(bin.getSplit().getFirstChildBin());
 				queue.addLast(bin.getSplit().getSecondChildBin());
@@ -110,16 +104,17 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 	}
 
 	@Override
-	public Iterator<ObjectSurfacePoint3D> getObjectIntersections(LineSegment3D line) {
+	public Iterator<ObjectSurfacePoint3D> getObjectIntersections(LineSegment3D line, ReusableObjectPack reusableObjects) {
 		if (keepTrackOfBinNeighbors()) {
-			return new ObjectLineIntersectionsIteratorImpl(line);
+			return new ObjectLineIntersectionsIteratorImpl(line, reusableObjects);
 		} else {
 			throw new UnsupportedOperationException("Requires keeping track of bin neighbors");
 		}
 	}
 
 	private SpatialBin createRootBin() {
-		return new SpatialBin(new Vector<Object3D>(getIndexedObjects()), getSceneBox());
+		List<Object3D> containedObjects = new Vector<Object3D>(getIndexedObjects());
+		return new SpatialBin(containedObjects, getSceneBox());
 	}
 
 	protected boolean splitBinsExclusivelyInXY() {
@@ -162,15 +157,6 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 
 	private int getMaximumLeafBins() {
 		return maximumLeafBins;
-	}
-
-	private List<BinSide> getReusableDirectionsList() {
-		List<BinSide> list = reusableDirectionsList.get();
-		if (list == null) {
-			list = new Vector<BinSide>(3);
-			reusableDirectionsList.set(list);
-		}
-		return list;
 	}
 
 	protected class SpatialBin extends Box3D {
@@ -219,7 +205,7 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 			return builder.toString();
 		}
 
-		public boolean split() {
+		public boolean split(ReusableObjectPack reusableObjects) {
 			boolean hasSplit = false;
 			if (isLeaf()) {
 				int n = getContainedObjectCount();
@@ -230,7 +216,7 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 						int m = Math.min(split.getFirstChildBin().getContainedObjectCount(), split.getSecondChildBin()
 								.getContainedObjectCount());
 						if (n - m >= getMinimumBinObjectReductionOnSplit()) {
-							reallocateNeighbors(split);
+							reallocateNeighbors(split, reusableObjects);
 							setSplit(split);
 							setContainedObjects(null); // spread over child bins
 							hasSplit = true;
@@ -304,26 +290,26 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 			return split;
 		}
 
-		private void reallocateNeighbors(BinSplit split) {
+		private void reallocateNeighbors(BinSplit split, ReusableObjectPack reusableObjects) {
 			if (keepTrackOfBinNeighbors()) {
-				reallocateNeighbors(split, BinSide.LEFT);
-				reallocateNeighbors(split, BinSide.RIGHT);
-				reallocateNeighbors(split, BinSide.BOTTOM);
-				reallocateNeighbors(split, BinSide.TOP);
-				reallocateNeighbors(split, BinSide.BACK);
-				reallocateNeighbors(split, BinSide.FRONT);
+				reallocateNeighbors(split, BinSide.LEFT, reusableObjects);
+				reallocateNeighbors(split, BinSide.RIGHT, reusableObjects);
+				reallocateNeighbors(split, BinSide.BOTTOM, reusableObjects);
+				reallocateNeighbors(split, BinSide.TOP, reusableObjects);
+				reallocateNeighbors(split, BinSide.BACK, reusableObjects);
+				reallocateNeighbors(split, BinSide.FRONT, reusableObjects);
 			}
 			setNeighbors(null); // spread over child bins
 		}
 
-		private void reallocateNeighbors(BinSplit split, BinSide side) {
+		private void reallocateNeighbors(BinSplit split, BinSide side, ReusableObjectPack reusableObjects) {
 			SpatialBin c1 = split.getFirstChildBin();
 			SpatialBin c2 = split.getSecondChildBin();
 			BinNeighbors n1 = c1.getNeighbors();
 			BinNeighbors n2 = c2.getNeighbors();
 			n1.markNeighborsStart(side);
 			n2.markNeighborsStart(side);
-			Iterator<SpatialBin> it = this.getNeighbors().iterator(side);
+			Iterator<SpatialBin> it = this.getNeighbors().iterator(side, reusableObjects);
 			Dimension cutDim = split.getCut().getDimension();
 			if (side.getDimension().equals(cutDim)) {
 				if (side.isFirstInDimension()) {
@@ -626,7 +612,7 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 
 	}
 
-	private static class BinNeighbors implements Iterable<SpatialBin> {
+	private static class BinNeighbors {
 
 		private List<SpatialBin> neighbors; // in order : left, right, bottom, top, back, front
 
@@ -641,12 +627,6 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 		private int neighborsBackStartIndex;
 
 		private int neighborsFrontStartIndex;
-
-		private static ThreadLocal<BinNeighborsIterator> reusableIterator;
-
-		static {
-			reusableIterator = new ThreadLocal<BinNeighborsIterator>();
-		}
 
 		public BinNeighbors() {
 			this.neighbors = new Vector<SpatialBin>();
@@ -724,13 +704,13 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 			}
 		}
 
-		@Override
-		public Iterator<SpatialBin> iterator() {
-			return getReusableIterator().init(this, 0, getNeighbors().size());
+		public Iterator<SpatialBin> iterator(ReusableObjectPack reusableObjects) {
+			return reusableObjects.getBinNeighborsIterator().getIterator().init(this, 0, getNeighbors().size());
 		}
 
-		public Iterator<SpatialBin> iterator(BinSide side) {
-			return getReusableIterator().init(this, getNeighborsStartIndex(side), getNeighborsEndIndexExclusive(side));
+		public Iterator<SpatialBin> iterator(BinSide side, ReusableObjectPack reusableObjects) {
+			return reusableObjects.getBinNeighborsIterator().getIterator()
+					.init(this, getNeighborsStartIndex(side), getNeighborsEndIndexExclusive(side));
 		}
 
 		private int getNeighborsCount(BinSide side) {
@@ -771,15 +751,6 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 
 		private List<SpatialBin> getNeighbors() {
 			return neighbors;
-		}
-
-		private static BinNeighborsIterator getReusableIterator() {
-			BinNeighborsIterator it = reusableIterator.get();
-			if (it == null) {
-				it = new BinNeighborsIterator();
-				reusableIterator.set(it);
-			}
-			return it;
 		}
 
 	}
@@ -833,8 +804,8 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 
 		private List<BinSide> directions;
 
-		public ObjectLineIntersectionsIteratorImpl(LineSegment3D line) {
-			super(line);
+		public ObjectLineIntersectionsIteratorImpl(LineSegment3D line, ReusableObjectPack reusableObjects) {
+			super(line, reusableObjects);
 			Point3D p1 = line.getP1();
 			Point3D p2 = line.getP2();
 			dx = p2.getX() - p1.getX();
@@ -849,11 +820,11 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 			currentBin = getRootBin().findLeafBinContaining(p1, xAffinity, yAffinity, zAffinity);
 			currentPosition = p1.clone();
 			proceed = currentBin != null;
-			directions = getReusableDirectionsList();
+			directions = reusableObjects.getBinSidesList().getBinSides();
 		}
 
 		@Override
-		protected void provisionIntersections() {
+		protected void provisionIntersections(ReusableObjectPack reusableObjects) {
 			// traverse bins along the line to add objects
 			List<ObjectSurfacePoint3D> intersections = getIntersections();
 			Set<Object3D> objects = getObjects();
@@ -864,17 +835,18 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 				if (currentObjects.hasNext()) {
 					Object3D object = currentObjects.next();
 					if (objects.add(object) && object.isRaytraceable()) {
-						object.asRaytraceableObject().intersectWithLightRay(getLine(), getScene(), intersections);
+						object.asRaytraceableObject().intersectWithLightRay(getLine(), getScene(), intersections,
+								reusableObjects);
 					}
 				} else {
-					advancePositionToNextBin();
+					advancePositionToNextBin(reusableObjects);
 					currentObjects = null;
 					proceed = currentBin != null;
 				}
 			}
 		}
 
-		private void advancePositionToNextBin() {
+		private void advancePositionToNextBin(ReusableObjectPack reusableObjects) {
 			// X-plane hit
 			double px = currentPosition.getX();
 			double rx = dx > 0 ? (currentBin.getX2() - px) / dx : (dx < 0 ? (currentBin.getX1() - px) / dx
@@ -920,14 +892,15 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 				currentPosition.setZ(qz);
 				// Advance bin
 				for (BinSide dir : directions) {
-					currentBin = findAdjacentBinContainingPoint(currentPosition, currentBin, dir);
+					currentBin = findAdjacentBinContainingPoint(currentPosition, currentBin, dir, reusableObjects);
 				}
 			}
 		}
 
-		private SpatialBin findAdjacentBinContainingPoint(Point3D point, SpatialBin homeBin, BinSide side) {
+		private SpatialBin findAdjacentBinContainingPoint(Point3D point, SpatialBin homeBin, BinSide side,
+				ReusableObjectPack reusableObjects) {
 			if (homeBin != null) {
-				Iterator<SpatialBin> neighbors = homeBin.getNeighbors().iterator(side);
+				Iterator<SpatialBin> neighbors = homeBin.getNeighbors().iterator(side, reusableObjects);
 				while (neighbors.hasNext()) {
 					SpatialBin neighbor = neighbors.next();
 					if (neighbor.contains(point))
@@ -939,7 +912,7 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 
 	}
 
-	public class NonUniformBinStatistics extends BinStatistics {
+	private class NonUniformBinStatistics extends BinStatistics {
 
 		public NonUniformBinStatistics() {
 		}
@@ -1023,7 +996,7 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 
 	}
 
-	public class ObjectsPerBinHistogramImpl extends ObjectsPerBinHistogram {
+	private class ObjectsPerBinHistogramImpl extends ObjectsPerBinHistogram {
 
 		public ObjectsPerBinHistogramImpl(int classCount, int classRangeSize) {
 			super(classCount, classRangeSize);
@@ -1085,6 +1058,34 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 
 		private Stack<SpatialBin> getBinStack() {
 			return binStack;
+		}
+
+	}
+
+	public static class ReusableBinNeighborsIterator {
+
+		private BinNeighborsIterator iterator;
+
+		public ReusableBinNeighborsIterator() {
+			this.iterator = new BinNeighborsIterator();
+		}
+
+		private BinNeighborsIterator getIterator() {
+			return iterator;
+		}
+
+	}
+
+	public static class ReusableBinSideList {
+
+		private List<BinSide> binSides;
+
+		public ReusableBinSideList() {
+			this.binSides = new Vector<BinSide>(3);
+		}
+
+		private List<BinSide> getBinSides() {
+			return binSides;
 		}
 
 	}

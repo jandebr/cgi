@@ -23,6 +23,7 @@ import org.maia.cgi.model.d3.camera.Camera;
 import org.maia.cgi.model.d3.object.Mesh3D.Edge;
 import org.maia.cgi.model.d3.scene.Scene;
 import org.maia.cgi.render.d3.RenderOptions;
+import org.maia.cgi.render.d3.ReusableObjectPack;
 
 /**
  * An object in 3D space that has the geometrical shape of a simple polygon
@@ -94,10 +95,10 @@ public class PolygonalObject3D extends VertexObject3D {
 
 	@Override
 	protected void intersectSelfWithRay(LineSegment3D ray, Scene scene, Collection<ObjectSurfacePoint3D> intersections,
-			RenderOptions options, boolean applyShading, boolean rayFromEye) {
+			RenderOptions options, ReusableObjectPack reusableObjects, boolean applyShading, boolean rayFromEye) {
 		ObjectSurfacePoint3D surfacePoint = findSurfacePointHitByRay(ray, scene, intersections, rayFromEye);
 		if (surfacePoint != null) {
-			colorSurfacePointHitByRay(surfacePoint, scene, options, applyShading);
+			colorSurfacePointHitByRay(surfacePoint, scene, options, reusableObjects, applyShading);
 			if (surfacePoint.getColor() != null) {
 				intersections.add(surfacePoint);
 			}
@@ -171,12 +172,12 @@ public class PolygonalObject3D extends VertexObject3D {
 	}
 
 	protected void colorSurfacePointHitByRay(ObjectSurfacePoint3D surfacePoint, Scene scene, RenderOptions options,
-			boolean applyShading) {
+			ReusableObjectPack reusableObjects, boolean applyShading) {
 		Color color = sampleBaseColor(surfacePoint.getPositionInCamera(), scene);
 		if (color != null) {
 			surfacePoint.setColor(color);
 			if (applyShading) {
-				applySurfacePointShading(surfacePoint, scene, options);
+				applySurfacePointShading(surfacePoint, scene, options, reusableObjects);
 			}
 		}
 	}
@@ -185,7 +186,8 @@ public class PolygonalObject3D extends VertexObject3D {
 		return Color.BLACK; // Subclasses should override this
 	}
 
-	protected void applySurfacePointShading(ObjectSurfacePoint3D surfacePoint, Scene scene, RenderOptions options) {
+	protected void applySurfacePointShading(ObjectSurfacePoint3D surfacePoint, Scene scene, RenderOptions options,
+			ReusableObjectPack reusableObjects) {
 		// Subclasses should override this
 	}
 

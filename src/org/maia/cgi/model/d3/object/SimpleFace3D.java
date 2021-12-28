@@ -7,6 +7,7 @@ import java.util.List;
 import org.maia.cgi.geometry.d3.Point3D;
 import org.maia.cgi.model.d3.scene.Scene;
 import org.maia.cgi.render.d3.RenderOptions;
+import org.maia.cgi.render.d3.ReusableObjectPack;
 import org.maia.cgi.render.d3.shading.FlatShadingModel;
 
 /**
@@ -62,14 +63,9 @@ public class SimpleFace3D extends ConvexPolygonalObject3D {
 	}
 
 	@Override
-	protected void applySurfacePointShading(ObjectSurfacePoint3D surfacePoint, Scene scene, RenderOptions options) {
-		getShadingModel().applyShading(surfacePoint, scene, options);
-	}
-
-	@Override
-	public void releaseMemory() {
-		super.releaseMemory();
-		getShadingModel().releaseMemory();
+	protected void applySurfacePointShading(ObjectSurfacePoint3D surfacePoint, Scene scene, RenderOptions options,
+			ReusableObjectPack reusableObjects) {
+		getShadingModel().applyShading(surfacePoint, scene, options, reusableObjects);
 	}
 
 	public Color getFrontColor() {

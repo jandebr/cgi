@@ -1,31 +1,20 @@
 package org.maia.cgi.model.d3.scene.index;
 
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.Vector;
 
 import org.maia.cgi.geometry.d3.LineSegment3D;
 import org.maia.cgi.model.d3.object.Object3D;
 import org.maia.cgi.model.d3.object.ObjectSurfacePoint3D;
 import org.maia.cgi.model.d3.scene.Scene;
+import org.maia.cgi.render.d3.ReusableObjectPack;
 
-public abstract class BinnedSceneSpatialIndex extends SceneSpatialIndex {
-
-	private ThreadLocal<List<ObjectSurfacePoint3D>> reusableIntersectionsList;
-
-	private ThreadLocal<Set<Object3D>> reusableObjectsSet;
+public abstract class BinnedSceneSpatialIndex extends BaseSceneSpatialIndex {
 
 	protected BinnedSceneSpatialIndex(Scene scene) {
 		super(scene);
-		init();
-	}
-
-	protected void init() {
-		this.reusableIntersectionsList = new ThreadLocal<List<ObjectSurfacePoint3D>>();
-		this.reusableObjectsSet = new ThreadLocal<Set<Object3D>>();
 	}
 
 	@Override
@@ -33,30 +22,7 @@ public abstract class BinnedSceneSpatialIndex extends SceneSpatialIndex {
 		return getBinStatistics().toString();
 	}
 
-	@Override
-	public void releaseMemory() {
-		init();
-	}
-
 	public abstract BinStatistics getBinStatistics();
-
-	protected List<ObjectSurfacePoint3D> getReusableIntersectionsList() {
-		List<ObjectSurfacePoint3D> list = reusableIntersectionsList.get();
-		if (list == null) {
-			list = new Vector<ObjectSurfacePoint3D>();
-			reusableIntersectionsList.set(list);
-		}
-		return list;
-	}
-
-	protected Set<Object3D> getReusableObjectsSet() {
-		Set<Object3D> set = reusableObjectsSet.get();
-		if (set == null) {
-			set = new HashSet<Object3D>(300);
-			reusableObjectsSet.set(set);
-		}
-		return set;
-	}
 
 	protected abstract class ObjectLineIntersectionsIterator implements Iterator<ObjectSurfacePoint3D> {
 
@@ -66,18 +32,19 @@ public abstract class BinnedSceneSpatialIndex extends SceneSpatialIndex {
 
 		private Set<Object3D> objects;
 
-		protected ObjectLineIntersectionsIterator(LineSegment3D line) {
+		private ReusableObjectPack reusableObjects;
+
+		protected ObjectLineIntersectionsIterator(LineSegment3D line, ReusableObjectPack reusableObjects) {
 			this.line = line;
-			this.intersections = getReusableIntersectionsList();
-			this.intersections.clear();
-			this.objects = getReusableObjectsSet();
-			this.objects.clear();
+			this.intersections = reusableObjects.getEmptiedIntersectionsList();
+			this.objects = reusableObjects.getEmptiedObjectsSet();
+			this.reusableObjects = reusableObjects;
 		}
 
 		@Override
 		public boolean hasNext() {
 			if (getIntersections().isEmpty()) {
-				provisionIntersections();
+				provisionIntersections(getReusableObjects());
 				return !getIntersections().isEmpty();
 			} else {
 				return true;
@@ -98,7 +65,7 @@ public abstract class BinnedSceneSpatialIndex extends SceneSpatialIndex {
 			throw new UnsupportedOperationException();
 		}
 
-		protected abstract void provisionIntersections();
+		protected abstract void provisionIntersections(ReusableObjectPack reusableObjects);
 
 		protected LineSegment3D getLine() {
 			return line;
@@ -110,6 +77,10 @@ public abstract class BinnedSceneSpatialIndex extends SceneSpatialIndex {
 
 		protected Set<Object3D> getObjects() {
 			return objects;
+		}
+
+		private ReusableObjectPack getReusableObjects() {
+			return reusableObjects;
 		}
 
 	}

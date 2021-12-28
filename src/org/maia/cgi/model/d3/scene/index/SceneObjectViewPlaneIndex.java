@@ -18,6 +18,7 @@ import org.maia.cgi.model.d3.camera.Camera;
 import org.maia.cgi.model.d3.camera.ViewVolume;
 import org.maia.cgi.model.d3.object.Object3D;
 import org.maia.cgi.model.d3.scene.Scene;
+import org.maia.cgi.render.d3.ReusableObjectPack;
 
 public class SceneObjectViewPlaneIndex extends NonUniformlyBinnedSceneSpatialIndex {
 
@@ -27,19 +28,11 @@ public class SceneObjectViewPlaneIndex extends NonUniformlyBinnedSceneSpatialInd
 
 	private Map<Object3D, Box3D> objectBoxes;
 
-	private ThreadLocal<SpatialBin> lastVisitedLeafBin;
-
 	public SceneObjectViewPlaneIndex(Scene scene, int maximumLeafBins) {
 		super(scene, maximumLeafBins);
 		this.backZ = getViewVolume().getFarPlaneZ();
 		this.frontZ = getViewVolume().getViewPlaneZ();
-	}
-
-	@Override
-	protected void init() {
-		super.init();
 		this.objectBoxes = new HashMap<Object3D, Box3D>(1000);
-		this.lastVisitedLeafBin = new ThreadLocal<SpatialBin>();
 	}
 
 	@Override
@@ -54,8 +47,8 @@ public class SceneObjectViewPlaneIndex extends NonUniformlyBinnedSceneSpatialInd
 		sortBinnedObjectsByIncreasingDepth();
 	}
 
-	public List<Object3D> getObjects(Point3D pointOnViewPlane) {
-		SpatialBin leafBin = findLeafBinContaining(pointOnViewPlane);
+	public List<Object3D> getObjects(Point3D pointOnViewPlane, ReusableObjectPack reusableObjects) {
+		SpatialBin leafBin = findLeafBinContaining(pointOnViewPlane, reusableObjects);
 		if (leafBin != null) {
 			return leafBin.getContainedObjects();
 		} else {
@@ -63,16 +56,15 @@ public class SceneObjectViewPlaneIndex extends NonUniformlyBinnedSceneSpatialInd
 		}
 	}
 
-	@Override
-	protected SpatialBin findLeafBinContaining(Point3D point) {
+	private SpatialBin findLeafBinContaining(Point3D point, ReusableObjectPack reusableObjects) {
 		SpatialBin leafBin = null;
-		SpatialBin lastBin = getLastVisitedLeafBin().get();
+		SpatialBin lastBin = reusableObjects.getLastVisitedLeafBin().getBin();
 		if (lastBin != null) {
 			leafBin = lastBin.findLeafBinContaining(point);
 		} else {
 			leafBin = super.findLeafBinContaining(point);
 		}
-		getLastVisitedLeafBin().set(leafBin);
+		reusableObjects.getLastVisitedLeafBin().setBin(leafBin);
 		return leafBin;
 	}
 
@@ -172,10 +164,6 @@ public class SceneObjectViewPlaneIndex extends NonUniformlyBinnedSceneSpatialInd
 		return objectBoxes;
 	}
 
-	private ThreadLocal<SpatialBin> getLastVisitedLeafBin() {
-		return lastVisitedLeafBin;
-	}
-
 	private class ObjectSorterByIncreasingDepth implements Comparator<Object3D> {
 
 		public ObjectSorterByIncreasingDepth() {
@@ -193,6 +181,23 @@ public class SceneObjectViewPlaneIndex extends NonUniformlyBinnedSceneSpatialInd
 				return 0;
 			}
 		}
+	}
+
+	public static class ReusableLastVisitedLeafBin {
+
+		private SpatialBin bin;
+
+		public ReusableLastVisitedLeafBin() {
+		}
+
+		private SpatialBin getBin() {
+			return bin;
+		}
+
+		private void setBin(SpatialBin bin) {
+			this.bin = bin;
+		}
+
 	}
 
 }

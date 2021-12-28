@@ -11,6 +11,7 @@ import org.maia.cgi.model.d3.CoordinateFrame;
 import org.maia.cgi.model.d3.camera.Camera;
 import org.maia.cgi.model.d3.scene.Scene;
 import org.maia.cgi.render.d3.RenderOptions;
+import org.maia.cgi.render.d3.ReusableObjectPack;
 
 public class MultipartObject3D<T extends ComposableObject3D> extends BaseObject3D implements CompositeObject3D<T> {
 
@@ -72,30 +73,30 @@ public class MultipartObject3D<T extends ComposableObject3D> extends BaseObject3
 
 	@Override
 	public final void intersectWithEyeRay(LineSegment3D ray, Scene scene,
-			Collection<ObjectSurfacePoint3D> intersections, RenderOptions options) {
+			Collection<ObjectSurfacePoint3D> intersections, RenderOptions options, ReusableObjectPack reusableObjects) {
 		for (Iterator<T> it = getParts().iterator(); it.hasNext();) {
 			Object3D part = it.next();
 			if (part.isRaytraceable()) {
-				part.asRaytraceableObject().intersectWithEyeRay(ray, scene, intersections, options);
+				part.asRaytraceableObject().intersectWithEyeRay(ray, scene, intersections, options, reusableObjects);
 			}
 		}
 	}
 
 	@Override
 	public final void intersectWithLightRay(LineSegment3D ray, Scene scene,
-			Collection<ObjectSurfacePoint3D> intersections) {
+			Collection<ObjectSurfacePoint3D> intersections, ReusableObjectPack reusableObjects) {
 		for (Iterator<T> it = getParts().iterator(); it.hasNext();) {
 			Object3D part = it.next();
 			if (part.isRaytraceable()) {
-				part.asRaytraceableObject().intersectWithLightRay(ray, scene, intersections);
+				part.asRaytraceableObject().intersectWithLightRay(ray, scene, intersections, reusableObjects);
 			}
 		}
 	}
 
 	@Override
 	protected final void intersectSelfWithRay(LineSegment3D ray, Scene scene,
-			Collection<ObjectSurfacePoint3D> intersections, RenderOptions options, boolean applyShading,
-			boolean rayFromEye) {
+			Collection<ObjectSurfacePoint3D> intersections, RenderOptions options, ReusableObjectPack reusableObjects,
+			boolean applyShading, boolean rayFromEye) {
 		// nothing to do, intersections only apply to parts
 	}
 

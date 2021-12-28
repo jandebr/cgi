@@ -14,6 +14,7 @@ import org.maia.cgi.render.d2.TextureMap;
 import org.maia.cgi.render.d2.TextureMapHandle;
 import org.maia.cgi.render.d2.TextureMapRegistry;
 import org.maia.cgi.render.d3.RenderOptions;
+import org.maia.cgi.render.d3.ReusableObjectPack;
 import org.maia.cgi.render.d3.shading.FlatShadingModel;
 import org.maia.cgi.transform.d3.TransformMatrix;
 import org.maia.cgi.transform.d3.Transformation;
@@ -107,8 +108,8 @@ public class SimpleTexturedFace3D extends SimpleFace3D {
 
 	@Override
 	protected void colorSurfacePointHitByRay(ObjectSurfacePoint3D surfacePoint, Scene scene, RenderOptions options,
-			boolean applyShading) {
-		super.colorSurfacePointHitByRay(surfacePoint, scene, options, applyShading);
+			ReusableObjectPack reusableObjects, boolean applyShading) {
+		super.colorSurfacePointHitByRay(surfacePoint, scene, options, reusableObjects, applyShading);
 		applyTransparency(surfacePoint, scene);
 	}
 
@@ -124,8 +125,9 @@ public class SimpleTexturedFace3D extends SimpleFace3D {
 	}
 
 	@Override
-	protected void applySurfacePointShading(ObjectSurfacePoint3D surfacePoint, Scene scene, RenderOptions options) {
-		super.applySurfacePointShading(surfacePoint, scene, options);
+	protected void applySurfacePointShading(ObjectSurfacePoint3D surfacePoint, Scene scene, RenderOptions options,
+			ReusableObjectPack reusableObjects) {
+		super.applySurfacePointShading(surfacePoint, scene, options, reusableObjects);
 		applyLuminance(surfacePoint, scene);
 	}
 
