@@ -10,7 +10,7 @@ import org.maia.cgi.model.d3.object.Object3D;
 import org.maia.cgi.model.d3.object.ObjectSurfacePoint3D;
 import org.maia.cgi.model.d3.scene.index.NonUniformlyBinnedSceneSpatialIndex.ReusableBinNeighborsIterator;
 import org.maia.cgi.model.d3.scene.index.NonUniformlyBinnedSceneSpatialIndex.ReusableBinSideList;
-import org.maia.cgi.model.d3.scene.index.SceneObjectViewPlaneIndex.ReusableLastVisitedLeafBin;
+import org.maia.cgi.model.d3.scene.index.NonUniformlyBinnedSceneViewPlaneIndex.ReusableLastVisitedLeafBin;
 import org.maia.cgi.render.d3.shading.ObscuredObjectsCache;
 
 /**

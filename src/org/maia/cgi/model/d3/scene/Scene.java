@@ -15,9 +15,9 @@ import org.maia.cgi.model.d3.camera.Camera;
 import org.maia.cgi.model.d3.camera.CameraObserver;
 import org.maia.cgi.model.d3.light.LightSource;
 import org.maia.cgi.model.d3.object.Object3D;
-import org.maia.cgi.model.d3.scene.index.SceneObjectViewPlaneIndex;
 import org.maia.cgi.model.d3.scene.index.SceneSpatialIndex;
 import org.maia.cgi.model.d3.scene.index.SceneSpatialIndexFactory;
+import org.maia.cgi.model.d3.scene.index.SceneViewPlaneIndex;
 import org.maia.cgi.render.d3.view.ColorDepthBuffer;
 
 public class Scene implements CameraObserver, Memoise {
@@ -43,7 +43,7 @@ public class Scene implements CameraObserver, Memoise {
 
 	private SceneSpatialIndex spatialIndex;
 
-	private SceneObjectViewPlaneIndex viewPlaneIndex;
+	private SceneViewPlaneIndex viewPlaneIndex;
 
 	private ColorDepthBuffer backdrop;
 
@@ -159,7 +159,7 @@ public class Scene implements CameraObserver, Memoise {
 		return spatialIndex;
 	}
 
-	public SceneObjectViewPlaneIndex getViewPlaneIndex() {
+	public SceneViewPlaneIndex getViewPlaneIndex() {
 		if (viewPlaneIndex == null) {
 			viewPlaneIndex = SceneSpatialIndexFactory.getInstance().createViewPlaneIndex(this);
 		}

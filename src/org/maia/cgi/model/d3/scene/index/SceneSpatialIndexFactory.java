@@ -42,8 +42,8 @@ public class SceneSpatialIndexFactory {
 		return index;
 	}
 
-	public SceneObjectViewPlaneIndex createViewPlaneIndex(Scene scene) {
-		SceneObjectViewPlaneIndex index = new SceneObjectViewPlaneIndex(scene, 250000);
+	public SceneViewPlaneIndex createViewPlaneIndex(Scene scene) {
+		NonUniformlyBinnedSceneViewPlaneIndex index = new NonUniformlyBinnedSceneViewPlaneIndex(scene, 250000);
 		index.buildIndex();
 		return index;
 	}

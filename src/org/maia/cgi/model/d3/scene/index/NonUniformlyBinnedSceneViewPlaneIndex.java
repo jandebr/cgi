@@ -20,7 +20,16 @@ import org.maia.cgi.model.d3.object.Object3D;
 import org.maia.cgi.model.d3.scene.Scene;
 import org.maia.cgi.render.d3.ReusableObjectPack;
 
-public class SceneObjectViewPlaneIndex extends NonUniformlyBinnedSceneSpatialIndex {
+/**
+ * 2D index of a <code>Scene</code>'s objects projected to the scene's view plane, represented as a rectilinear grid
+ * 
+ * <p>
+ * The index is constructed based on the current positions and orientations of the objects in the scene and the camera.
+ * It is the responsability of the client code to create a new index to reflect an updated snapshot of that scene.
+ * </p>
+ */
+public class NonUniformlyBinnedSceneViewPlaneIndex extends NonUniformlyBinnedSceneSpatialIndex implements
+		SceneViewPlaneIndex {
 
 	private double backZ;
 
@@ -28,7 +37,7 @@ public class SceneObjectViewPlaneIndex extends NonUniformlyBinnedSceneSpatialInd
 
 	private Map<Object3D, Box3D> objectBoxes;
 
-	public SceneObjectViewPlaneIndex(Scene scene, int maximumLeafBins) {
+	public NonUniformlyBinnedSceneViewPlaneIndex(Scene scene, int maximumLeafBins) {
 		super(scene, maximumLeafBins);
 		this.backZ = getViewVolume().getFarPlaneZ();
 		this.frontZ = getViewVolume().getViewPlaneZ();
@@ -47,7 +56,8 @@ public class SceneObjectViewPlaneIndex extends NonUniformlyBinnedSceneSpatialInd
 		sortBinnedObjectsByIncreasingDepth();
 	}
 
-	public List<Object3D> getObjects(Point3D pointOnViewPlane, ReusableObjectPack reusableObjects) {
+	@Override
+	public List<Object3D> getViewPlaneObjects(Point3D pointOnViewPlane, ReusableObjectPack reusableObjects) {
 		SpatialBin leafBin = findLeafBinContaining(pointOnViewPlane, reusableObjects);
 		if (leafBin != null) {
 			return leafBin.getContainedObjects();

@@ -17,7 +17,7 @@ import org.maia.cgi.model.d3.scene.Scene;
 import org.maia.cgi.render.d3.ReusableObjectPack;
 
 /**
- * Spatial index of a Scene's objects in camera coordinates as a rectilinear grid of cuboids called "bins"
+ * 3D index of a <code>Scene</code>'s objects in camera coordinates as a rectilinear grid of cuboids called "bins"
  * 
  * <p>
  * The binning strategy is designed to carve out empty space in a scene and to split bins that have a higher object
@@ -68,10 +68,6 @@ public class NonUniformlyBinnedSceneSpatialIndex extends BinnedSceneSpatialIndex
 		this.minimumBinObjectReductionOnSplit = minimumBinObjectReductionOnSplit;
 		this.maximumBinTreeDepth = maximumBinTreeDepth;
 		this.maximumLeafBins = maximumLeafBins;
-	}
-
-	public void printBins() {
-		System.out.println(getRootBin());
 	}
 
 	@Override

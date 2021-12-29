@@ -24,7 +24,7 @@ import org.maia.cgi.model.d3.object.ObjectSurfacePoint3D;
 import org.maia.cgi.model.d3.object.ObjectSurfacePoint3DImpl;
 import org.maia.cgi.model.d3.scene.Scene;
 import org.maia.cgi.model.d3.scene.SceneUtils;
-import org.maia.cgi.model.d3.scene.index.SceneObjectViewPlaneIndex;
+import org.maia.cgi.model.d3.scene.index.SceneViewPlaneIndex;
 import org.maia.cgi.render.d3.view.ColorDepthBuffer;
 import org.maia.cgi.render.d3.view.ViewPort;
 
@@ -194,8 +194,7 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 			sb.append("\tView plane {\n");
 			sb.append("\t\tXY bounds: ").append(getViewPlaneBounds()).append("\n");
 			sb.append("\t\tZ: ").append(getViewPlaneZ()).append("\n");
-			sb.append("\t\t").append(getObjectIndex().getBinStatistics().toString().replace("\n", "\n\t\t"))
-					.append("\n");
+			sb.append("\t\t").append(getViewPlaneIndex().toString().replace("\n", "\n\t\t")).append("\n");
 			sb.append("\t}\n");
 			sb.append("}");
 			return sb.toString();
@@ -265,7 +264,7 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 			return pixelAveragingConvolutionMatrix;
 		}
 
-		private SceneObjectViewPlaneIndex getObjectIndex() {
+		private SceneViewPlaneIndex getViewPlaneIndex() {
 			return getScene().getViewPlaneIndex();
 		}
 
@@ -406,7 +405,7 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 			Scene scene = state.getScene();
 			Point3D pointOnViewPlane = ray.getP1();
 			ReusableObjectPack reusableObjects = getReusableObjects();
-			List<Object3D> objects = state.getObjectIndex().getObjects(pointOnViewPlane, reusableObjects);
+			List<Object3D> objects = state.getViewPlaneIndex().getViewPlaneObjects(pointOnViewPlane, reusableObjects);
 			if (objects != null) {
 				for (Object3D object : objects) {
 					if (object.isRaytraceable()) {

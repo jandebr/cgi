@@ -17,7 +17,7 @@ import org.maia.cgi.model.d3.scene.Scene;
 import org.maia.cgi.render.d3.ReusableObjectPack;
 
 /**
- * Spatial index of a Scene's objects in camera coordinates as a Cartesian grid of unit cubes called "bins"
+ * 3D index of a Scene's objects in camera coordinates as a Cartesian grid of unit cubes called "bins"
  * 
  * <p>
  * The spatial index is constructed based on the current positions and orientations of the objects in the scene and the
