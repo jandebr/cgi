@@ -311,6 +311,8 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 
 		private List<Color> colorList; // reusable
 
+		private Point3D pointOnViewPlane; // reusable
+
 		private LineSegment3D ray; // reusable
 
 		public RenderRasterWorker(RenderState state, Collection<ViewPort> outputs) {
@@ -319,26 +321,32 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 			this.outputs = outputs;
 			this.intersections = new Vector<ObjectSurfacePoint3D>();
 			this.colorList = new Vector<Color>();
-			this.ray = new LineSegment3D(Point3D.origin(), Point3D.origin(), true, false);
+			this.pointOnViewPlane = new Point3D();
+			this.ray = new LineSegment3D(this.pointOnViewPlane, new Point3D(), true, false);
 		}
 
 		@Override
 		public void run() {
 			RenderState state = getState();
+			Point3D pointOnViewPlane = getPointOnViewPlane();
+			pointOnViewPlane.setZ(state.getViewPlaneZ());
 			int pw = state.getPixelWidth();
 			int ph = state.getPixelHeight();
+			int spp = state.getSamplesPerPixel();
 			double vw = state.getViewPlaneBounds().getWidth();
 			double vh = state.getViewPlaneBounds().getHeight();
-			double vz = state.getViewPlaneZ();
 			double vx0 = state.getViewPlaneBounds().getLeft();
 			double vy0 = state.getViewPlaneBounds().getBottom();
 			while (state.hasNextRenderLine()) {
 				int iy = state.nextRenderLine();
-				double vy = vy0 + (ph - iy - 0.5) / ph * vh;
+				pointOnViewPlane.setY(vy0 + (ph - iy - 0.5) / ph * vh);
 				for (int ix = 0; ix < pw; ix++) {
-					double vx = vx0 + (ix + 0.5) / pw * vw;
-					Point3D viewPoint = new Point3D(vx, vy, vz);
-					renderPixel(ix, iy, viewPoint);
+					pointOnViewPlane.setX(vx0 + (ix + 0.5) / pw * vw);
+					if (spp == 1) {
+						renderPixelWithoutSupersampling(ix, iy);
+					} else {
+						renderPixelBySupersampling(ix, iy);
+					}
 				}
 				fireRenderingProgressUpdate(state.getScene(), state.getTotalSteps(), state.getCurrentStep(),
 						state.getRasterRenderProgress(), STEP_LABEL_RAYTRACE);
@@ -346,20 +354,10 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 			notifyRenderRasterWorkerCompletion(this);
 		}
 
-		private void renderPixel(int ix, int iy, Point3D viewPoint) {
-			if (getState().getSamplesPerPixel() == 1) {
-				renderPixelWithoutSupersampling(ix, iy, viewPoint);
-			} else {
-				renderPixelBySupersampling(ix, iy, viewPoint);
-			}
-		}
-
-		private void renderPixelWithoutSupersampling(int ix, int iy, Point3D viewPoint) {
+		private void renderPixelWithoutSupersampling(int ix, int iy) {
 			RenderState state = getState();
 			ColorDepthBuffer raster = state.getRaster();
-			LineSegment3D ray = getRay();
-			ray.setP1(viewPoint);
-			ray.setP2(viewPoint.plus(viewPoint.minus(Point3D.origin())));
+			LineSegment3D ray = getDirectedRay();
 			Collection<ObjectSurfacePoint3D> intersections = getSceneIntersectionsWithRay(ray, ix, iy);
 			if (!intersections.isEmpty()) {
 				sortIntersectionsByDepth();
@@ -368,23 +366,25 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 			renderPixelAtViewPorts(ix, iy, raster.getColor(ix, iy), getOutputs());
 		}
 
-		private void renderPixelBySupersampling(int ix, int iy, Point3D viewPoint) {
+		private void renderPixelBySupersampling(int ix, int iy) {
 			RenderState state = getState();
 			ColorDepthBuffer raster = state.getRaster();
 			int sppx = state.getSamplesPerPixelX();
 			int sppy = state.getSamplesPerPixelY();
 			double pvw = state.getViewPlaneBounds().getWidth() / state.getPixelWidth(); // pixel view width
 			double pvh = state.getViewPlaneBounds().getHeight() / state.getPixelHeight(); // pixel view height
-			LineSegment3D ray = getRay();
+			Point3D pointOnViewPlane = getPointOnViewPlane();
+			double vx = pointOnViewPlane.getX();
+			double vy = pointOnViewPlane.getY();
+			double vx0 = vx - pvw / 2;
+			double vy0 = vy + pvh / 2;
 			for (int si = 0; si < sppy; si++) {
 				int iry = iy * sppy + si;
-				double vsy = viewPoint.getY() + pvh / 2 - (si + 0.5) / sppy * pvh;
+				pointOnViewPlane.setY(vy0 - (si + 0.5) / sppy * pvh);
 				for (int sj = 0; sj < sppx; sj++) {
 					int irx = ix * sppx + sj;
-					double vsx = viewPoint.getX() - pvw / 2 + (sj + 0.5) / sppx * pvw;
-					Point3D samplePoint = new Point3D(vsx, vsy, viewPoint.getZ());
-					ray.setP1(samplePoint);
-					ray.setP2(samplePoint.plus(samplePoint.minus(Point3D.origin())));
+					pointOnViewPlane.setX(vx0 + (sj + 0.5) / sppx * pvw);
+					LineSegment3D ray = getDirectedRay();
 					Collection<ObjectSurfacePoint3D> intersections = getSceneIntersectionsWithRay(ray, ix, iy);
 					if (!intersections.isEmpty()) {
 						sortIntersectionsByDepth();
@@ -392,9 +392,22 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 					}
 				}
 			}
+			pointOnViewPlane.setX(vx);
+			pointOnViewPlane.setY(vy);
 			renderPixelAtViewPorts(ix, iy,
 					raster.convoluteColor(ix * sppx, iy * sppy, state.getPixelAveragingConvolutionMatrix()),
 					getOutputs());
+		}
+
+		private LineSegment3D getDirectedRay() {
+			LineSegment3D ray = getRay();
+			Point3D p1 = ray.getP1();
+			Point3D p2 = ray.getP2();
+			p2.setX(p1.getX() * 2.0);
+			p2.setY(p1.getY() * 2.0);
+			p2.setZ(p1.getZ() * 2.0);
+			ray.invalidateDerivedProperties();
+			return ray;
 		}
 
 		private Collection<ObjectSurfacePoint3D> getSceneIntersectionsWithRay(LineSegment3D ray, int ix, int iy) {
@@ -404,7 +417,7 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 			RenderState state = getState();
 			RenderOptions options = state.getOptions();
 			Scene scene = state.getScene();
-			Point3D pointOnViewPlane = ray.getP1();
+			Point3D pointOnViewPlane = getPointOnViewPlane();
 			ReusableObjectPack reusableObjects = getReusableObjects();
 			Iterator<Object3D> objectsIterator = state.getViewPlaneIndex().getViewPlaneObjects(pointOnViewPlane,
 					reusableObjects);
@@ -493,6 +506,10 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 
 		private List<Color> getColorList() {
 			return colorList;
+		}
+
+		private Point3D getPointOnViewPlane() {
+			return pointOnViewPlane;
 		}
 
 		private LineSegment3D getRay() {
