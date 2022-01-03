@@ -6,7 +6,6 @@ import java.util.List;
 
 import org.maia.cgi.compose.Compositing;
 import org.maia.cgi.geometry.d3.Point3D;
-import org.maia.cgi.model.d3.CoordinateFrame;
 import org.maia.cgi.model.d3.object.Mesh3D;
 import org.maia.cgi.model.d3.object.Mesh3D.Edge;
 import org.maia.cgi.model.d3.object.Mesh3DImpl;
@@ -30,7 +29,7 @@ public class WireframeRenderer extends BaseSceneRenderer {
 		int n = objects.size();
 		int i = 0;
 		for (MeshObject3D object : objects) {
-			Mesh3D mesh = object.getMesh(CoordinateFrame.CAMERA, scene.getCamera());
+			Mesh3D mesh = object.getMeshInCameraCoordinates(scene.getCamera());
 			renderMesh(mesh, projectionMatrix, outputs, options);
 			double progress = ++i / (double) n;
 			fireRenderingProgressUpdate(scene, 1, 0, progress, STEP_LABEL_RENDER);

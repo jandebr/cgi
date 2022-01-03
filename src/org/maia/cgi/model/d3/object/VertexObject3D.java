@@ -1,22 +1,23 @@
 package org.maia.cgi.model.d3.object;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.maia.cgi.geometry.d3.Box3D;
 import org.maia.cgi.geometry.d3.Point3D;
-import org.maia.cgi.model.d3.CoordinateFrame;
 import org.maia.cgi.model.d3.camera.Camera;
 import org.maia.cgi.model.d3.object.Mesh3D.Edge;
 import org.maia.cgi.transform.d3.Transformation;
 
 public abstract class VertexObject3D extends BaseObject3D implements MeshObject3D {
 
-	private Map<CoordinateFrame, Mesh3D> meshes = new HashMap<CoordinateFrame, Mesh3D>(5);
+	private Mesh3D meshInObjectCoordinates; // base mesh
+
+	private Mesh3D meshInWorldCoordinates; // derived, cached mesh
+
+	private Mesh3D meshInCameraCoordinates; // derived, cached mesh
 
 	protected VertexObject3D(List<Point3D> vertices, List<Edge> edges) {
-		meshes.put(CoordinateFrame.OBJECT, new Mesh3DImpl(vertices, edges));
+		this.meshInObjectCoordinates = new Mesh3DImpl(vertices, edges);
 	}
 
 	@Override
@@ -75,38 +76,45 @@ public abstract class VertexObject3D extends BaseObject3D implements MeshObject3
 		return getVerticesInObjectCoordinates().size();
 	}
 
-	@Override
-	public Mesh3D getMesh(CoordinateFrame cframe, Camera camera) {
-		Mesh3D mesh = meshes.get(cframe);
-		if (mesh == null) {
-			getVertices(cframe, camera); // as a side effect, also sets the mesh
-			mesh = meshes.get(cframe);
-		}
-		return mesh;
-	}
-
-	protected List<Point3D> getVertices(CoordinateFrame cframe, Camera camera) {
-		List<Point3D> vertices = null;
-		if (cframe.equals(CoordinateFrame.OBJECT)) {
-			vertices = getVerticesInObjectCoordinates();
-		} else if (cframe.equals(CoordinateFrame.WORLD)) {
-			vertices = getVerticesInWorldCoordinates();
-		} else if (cframe.equals(CoordinateFrame.CAMERA)) {
-			vertices = getVerticesInCameraCoordinates(camera);
-		}
-		return vertices;
-	}
-
 	public List<Point3D> getVerticesInObjectCoordinates() {
-		return meshes.get(CoordinateFrame.OBJECT).getVertices();
+		return getMeshInObjectCoordinates().getVertices();
 	}
 
 	public List<Point3D> getVerticesInWorldCoordinates() {
-		if (!meshes.containsKey(CoordinateFrame.WORLD)) {
-			List<Point3D> vertices = deriveVerticesInWorldCoordinates();
-			meshes.put(CoordinateFrame.WORLD, new Mesh3DImpl(vertices, getEdges()));
+		return getMeshInWorldCoordinates().getVertices();
+	}
+
+	public List<Point3D> getVerticesInCameraCoordinates(Camera camera) {
+		return getMeshInCameraCoordinates(camera).getVertices();
+	}
+
+	@Override
+	public Mesh3D getMeshInObjectCoordinates() {
+		return meshInObjectCoordinates;
+	}
+
+	@Override
+	public Mesh3D getMeshInWorldCoordinates() {
+		if (meshInWorldCoordinates == null) {
+			meshInWorldCoordinates = deriveMeshInWorldCoordinates();
 		}
-		return meshes.get(CoordinateFrame.WORLD).getVertices();
+		return meshInWorldCoordinates;
+	}
+
+	@Override
+	public Mesh3D getMeshInCameraCoordinates(Camera camera) {
+		if (meshInCameraCoordinates == null) {
+			meshInCameraCoordinates = deriveMeshInCameraCoordinates(camera);
+		}
+		return meshInCameraCoordinates;
+	}
+
+	private Mesh3D deriveMeshInWorldCoordinates() {
+		return new Mesh3DImpl(deriveVerticesInWorldCoordinates(), getEdges());
+	}
+
+	private Mesh3D deriveMeshInCameraCoordinates(Camera camera) {
+		return new Mesh3DImpl(deriveVerticesInCameraCoordinates(camera), getEdges());
 	}
 
 	private List<Point3D> deriveVerticesInWorldCoordinates() {
@@ -114,20 +122,12 @@ public abstract class VertexObject3D extends BaseObject3D implements MeshObject3
 				.transform(getVerticesInObjectCoordinates());
 	}
 
-	protected List<Point3D> getVerticesInCameraCoordinates(Camera camera) {
-		if (!meshes.containsKey(CoordinateFrame.CAMERA)) {
-			List<Point3D> vertices = deriveVerticesInCameraCoordinates(camera);
-			meshes.put(CoordinateFrame.CAMERA, new Mesh3DImpl(vertices, getEdges()));
-		}
-		return meshes.get(CoordinateFrame.CAMERA).getVertices();
-	}
-
 	private List<Point3D> deriveVerticesInCameraCoordinates(Camera camera) {
 		return camera.getViewingMatrix().transform(getVerticesInWorldCoordinates());
 	}
 
-	protected List<Edge> getEdges() {
-		return meshes.get(CoordinateFrame.OBJECT).getEdges();
+	private List<Edge> getEdges() {
+		return meshInObjectCoordinates.getEdges();
 	}
 
 	protected Point3D fromCameraToObjectCoordinates(Point3D point, Camera camera) {
@@ -171,11 +171,11 @@ public abstract class VertexObject3D extends BaseObject3D implements MeshObject3
 	}
 
 	private void invalidateWorldMesh() {
-		meshes.remove(CoordinateFrame.WORLD);
+		meshInWorldCoordinates = null;
 	}
 
 	private void invalidateCameraMesh() {
-		meshes.remove(CoordinateFrame.CAMERA);
+		meshInCameraCoordinates = null;
 	}
 
 }

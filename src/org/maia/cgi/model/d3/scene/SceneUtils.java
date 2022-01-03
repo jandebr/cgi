@@ -10,7 +10,6 @@ import org.maia.cgi.geometry.Geometry;
 import org.maia.cgi.geometry.d3.Box3D;
 import org.maia.cgi.geometry.d3.LineSegment3D;
 import org.maia.cgi.geometry.d3.Point3D;
-import org.maia.cgi.model.d3.CoordinateFrame;
 import org.maia.cgi.model.d3.camera.MovableCamera;
 import org.maia.cgi.model.d3.camera.PerspectiveViewVolume;
 import org.maia.cgi.model.d3.camera.ViewVolume;
@@ -35,7 +34,7 @@ public class SceneUtils {
 		double z = viewVolume.getViewPlaneZ();
 		int n = 0;
 		for (MeshObject3D object : getAllMeshObjectsInScene(scene)) {
-			Mesh3D mesh = object.getMesh(CoordinateFrame.CAMERA, scene.getCamera());
+			Mesh3D mesh = object.getMeshInCameraCoordinates(scene.getCamera());
 			List<Point3D> projectedVertices = matrix.transform(mesh.getVertices());
 			for (Point3D p : projectedVertices) {
 				p.normalizeToUnitW(); // perspective division
@@ -171,7 +170,7 @@ public class SceneUtils {
 			}
 		} else {
 			if (current.isMesh()) {
-				Mesh3D mesh = current.asMeshObject().getMesh(CoordinateFrame.WORLD, null);
+				Mesh3D mesh = current.asMeshObject().getMeshInWorldCoordinates();
 				metrics.setVertices(metrics.getVertices() + mesh.getVertices().size());
 				metrics.setEdges(metrics.getEdges() + mesh.getEdges().size());
 				uniqueVertices.addAll(mesh.getVertices());
