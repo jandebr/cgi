@@ -10,7 +10,7 @@ public interface DirectionalLightSource extends LightSource {
 	 * The direction in which light from this light source radiates out in space
 	 * 
 	 * @return The direction of this light source, represented in the <em>camera</em> coordinate frame
-	 * @see CoordinateFrame
+	 * @see CoordinateFrame#CAMERA
 	 */
 	Vector3D getDirection();
 

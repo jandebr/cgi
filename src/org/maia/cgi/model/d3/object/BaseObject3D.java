@@ -32,6 +32,8 @@ public abstract class BaseObject3D implements BoundedObject3D, ComposableObject3
 
 	private Box3D boundingBoxInCameraCoordinates; // cached bounding box
 
+	private Box3D boundingBoxInViewVolumeCoordinates; // cached bounding box
+
 	protected BaseObject3D() {
 		this.ownCompositeTransform = new TwoWayCompositeTransform();
 	}
@@ -263,6 +265,7 @@ public abstract class BaseObject3D implements BoundedObject3D, ComposableObject3
 
 	private void invalidateCameraBoundingBox() {
 		boundingBoxInCameraCoordinates = null;
+		boundingBoxInViewVolumeCoordinates = null;
 	}
 
 	@Override
@@ -273,6 +276,8 @@ public abstract class BaseObject3D implements BoundedObject3D, ComposableObject3
 			return getBoundingBoxInWorldCoordinates();
 		} else if (cframe.equals(CoordinateFrame.CAMERA)) {
 			return getBoundingBoxInCameraCoordinates(camera);
+		} else if (cframe.equals(CoordinateFrame.VIEWVOLUME)) {
+			return getBoundingBoxInViewVolumeCoordinates(camera);
 		} else {
 			return null;
 		}
@@ -305,11 +310,22 @@ public abstract class BaseObject3D implements BoundedObject3D, ComposableObject3
 		return boundingBoxInCameraCoordinates;
 	}
 
+	@Override
+	public Box3D getBoundingBoxInViewVolumeCoordinates(Camera camera) {
+		if (boundingBoxInViewVolumeCoordinates == null) {
+			Metrics.getInstance().incrementBoundingBoxComputations();
+			boundingBoxInViewVolumeCoordinates = deriveBoundingBoxInViewVolumeCoordinates(camera);
+		}
+		return boundingBoxInViewVolumeCoordinates;
+	}
+
 	protected abstract Box3D deriveBoundingBoxInObjectCoordinates();
 
 	protected abstract Box3D deriveBoundingBoxInWorldCoordinates();
 
 	protected abstract Box3D deriveBoundingBoxInCameraCoordinates(Camera camera);
+
+	protected abstract Box3D deriveBoundingBoxInViewVolumeCoordinates(Camera camera);
 
 	@SuppressWarnings("unchecked")
 	@Override

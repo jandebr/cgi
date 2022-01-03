@@ -32,6 +32,10 @@ public class Box3D {
 		setZ2(z2);
 	}
 
+	public static Box3D canonical() {
+		return new Box3D(-1.0, 1.0, -1.0, 1.0, -1.0, 1.0);
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();

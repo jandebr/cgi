@@ -2,7 +2,6 @@ package org.maia.cgi.model.d3.scene;
 
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
@@ -11,8 +10,6 @@ import org.maia.cgi.geometry.d3.Box3D;
 import org.maia.cgi.geometry.d3.LineSegment3D;
 import org.maia.cgi.geometry.d3.Point3D;
 import org.maia.cgi.model.d3.camera.MovableCamera;
-import org.maia.cgi.model.d3.camera.PerspectiveViewVolume;
-import org.maia.cgi.model.d3.camera.ViewVolume;
 import org.maia.cgi.model.d3.light.DirectionalLightSource;
 import org.maia.cgi.model.d3.light.LightSource;
 import org.maia.cgi.model.d3.light.PositionalLightSource;
@@ -22,39 +19,8 @@ import org.maia.cgi.model.d3.object.MeshObject3D;
 import org.maia.cgi.model.d3.object.Object3D;
 import org.maia.cgi.model.d3.object.PolygonalObject3D;
 import org.maia.cgi.model.d3.object.RaytraceableObject3D;
-import org.maia.cgi.transform.d3.TransformMatrix;
 
 public class SceneUtils {
-
-	public static Box3D getSceneProjectedBoundingBox(Scene scene, double viewAngleInDegrees, double aspectRatio) {
-		ViewVolume viewVolume = PerspectiveViewVolume.createToEncloseInDepth(scene.getBoundingBoxInCameraCoordinates(),
-				viewAngleInDegrees, aspectRatio);
-		TransformMatrix matrix = viewVolume.getProjectionMatrix();
-		double xmin = 0, xmax = 0, ymin = 0, ymax = 0;
-		double z = viewVolume.getViewPlaneZ();
-		int n = 0;
-		for (MeshObject3D object : getAllMeshObjectsInScene(scene)) {
-			Mesh3D mesh = object.getMeshInCameraCoordinates(scene.getCamera());
-			List<Point3D> projectedVertices = matrix.transform(mesh.getVertices());
-			for (Point3D p : projectedVertices) {
-				p.normalizeToUnitW(); // perspective division
-				double x = p.getX();
-				double y = p.getY();
-				if (n++ == 0) {
-					xmin = x;
-					xmax = x;
-					ymin = y;
-					ymax = y;
-				} else {
-					xmin = Math.min(xmin, x);
-					xmax = Math.max(xmax, x);
-					ymin = Math.min(ymin, y);
-					ymax = Math.max(ymax, y);
-				}
-			}
-		}
-		return new Box3D(xmin, xmax, ymin, ymax, z, z);
-	}
 
 	public static Collection<Object3D> getAllIndividualObjectsInScene(Scene scene) {
 		Collection<Object3D> objects = new Vector<Object3D>(1000);

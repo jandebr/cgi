@@ -41,4 +41,8 @@ public class CGISystem {
 		System.gc();
 	}
 
+	public static void exit() {
+		System.exit(0);
+	}
+
 }

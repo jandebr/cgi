@@ -41,6 +41,8 @@ public class Scene implements CameraObserver, Memoise {
 
 	private Box3D boundingBoxInCameraCoordinates; // cached bounding box
 
+	private Box3D boundingBoxInViewVolumeCoordinates; // cached bounding box
+
 	private double distanceOutsideScene = -1.0;
 
 	private SceneSpatialIndex spatialIndex;
@@ -128,6 +130,13 @@ public class Scene implements CameraObserver, Memoise {
 		return boundingBoxInCameraCoordinates;
 	}
 
+	public Box3D getBoundingBoxInViewVolumeCoordinates() {
+		if (boundingBoxInViewVolumeCoordinates == null) {
+			boundingBoxInViewVolumeCoordinates = deriveBoundingBox(CoordinateFrame.VIEWVOLUME);
+		}
+		return boundingBoxInViewVolumeCoordinates;
+	}
+
 	private Box3D deriveBoundingBox(CoordinateFrame cframe) {
 		Metrics.getInstance().incrementBoundingBoxComputations();
 		Box3D bbox = null;
@@ -147,12 +156,13 @@ public class Scene implements CameraObserver, Memoise {
 	private void invalidateBoundingBoxes() {
 		boundingBoxInObjectCoordinates = null;
 		boundingBoxInWorldCoordinates = null;
-		boundingBoxInCameraCoordinates = null;
+		invalidateCameraBoundingBox();
 		distanceOutsideScene = -1.0;
 	}
 
 	private void invalidateCameraBoundingBox() {
 		boundingBoxInCameraCoordinates = null;
+		boundingBoxInViewVolumeCoordinates = null;
 	}
 
 	private void invalidateSpatialIndices() {

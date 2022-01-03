@@ -10,4 +10,6 @@ public interface MeshObject3D extends Object3D {
 
 	Mesh3D getMeshInCameraCoordinates(Camera camera);
 
+	Mesh3D getMeshInViewVolumeCoordinates(Camera camera);
+
 }

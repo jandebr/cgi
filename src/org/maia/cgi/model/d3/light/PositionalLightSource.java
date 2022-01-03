@@ -10,7 +10,7 @@ public interface PositionalLightSource extends LightSource {
 	 * The position of this light source
 	 * 
 	 * @return The position, represented in the <em>world</em> coordinate frame
-	 * @see CoordinateFrame
+	 * @see CoordinateFrame#WORLD
 	 */
 	Point3D getPositionInWorld();
 

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
+import org.maia.cgi.geometry.d3.Point3D;
 import org.maia.cgi.model.d3.light.LightRaySegment;
 import org.maia.cgi.model.d3.object.Object3D;
 import org.maia.cgi.model.d3.object.ObjectSurfacePoint3D;
@@ -42,6 +43,8 @@ public class ReusableObjectPack {
 
 	private ObscuredObjectsCache obscuredObjectsCache;
 
+	private Point3D pointInViewVolume;
+
 	public ReusableObjectPack() {
 		this.intersectionsList = new Vector<ObjectSurfacePoint3D>();
 		this.objectsSet = new HashSet<Object3D>(300);
@@ -50,6 +53,7 @@ public class ReusableObjectPack {
 		this.lastVisitedLeafBin = new ReusableLastVisitedLeafBin();
 		this.lightRay = new LightRaySegment();
 		this.obscuredObjectsCache = new ObscuredObjectsCache();
+		this.pointInViewVolume = new Point3D();
 	}
 
 	public List<ObjectSurfacePoint3D> getEmptiedIntersectionsList() {
@@ -90,6 +94,10 @@ public class ReusableObjectPack {
 
 	public ObscuredObjectsCache getObscuredObjectsCache() {
 		return obscuredObjectsCache;
+	}
+
+	public Point3D getPointInViewVolume() {
+		return pointInViewVolume;
 	}
 
 }

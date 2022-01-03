@@ -65,6 +65,11 @@ public class MultipartObject3D<T extends ComposableObject3D> extends BaseObject3
 		return deriveBoundingBox(CoordinateFrame.CAMERA, camera);
 	}
 
+	@Override
+	protected Box3D deriveBoundingBoxInViewVolumeCoordinates(Camera camera) {
+		return deriveBoundingBox(CoordinateFrame.VIEWVOLUME, camera);
+	}
+
 	private Box3D deriveBoundingBox(CoordinateFrame cframe, Camera camera) {
 		Box3D bbox = null;
 		for (Iterator<T> it = getParts().iterator(); it.hasNext();) {

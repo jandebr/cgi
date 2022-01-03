@@ -126,7 +126,7 @@ public class Line3D {
 		invalidateDerivedProperties();
 	}
 
-	private void invalidateDerivedProperties() {
+	public void invalidateDerivedProperties() {
 		directionVector = null;
 		unitDirectionVector = null;
 	}

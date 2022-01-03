@@ -744,7 +744,7 @@ public class RenderFrame extends JFrame implements SceneRendererProgressTracker,
 
 		@Override
 		public void actionPerformed(ActionEvent event) {
-			System.exit(0);
+			CGISystem.exit();
 		}
 
 	}

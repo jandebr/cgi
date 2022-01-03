@@ -53,6 +53,11 @@ public class PerspectiveViewVolume implements ViewVolume {
 	}
 
 	@Override
+	public final boolean isPerspectiveProjection() {
+		return true;
+	}
+
+	@Override
 	public TransformMatrix getProjectionMatrix() {
 		return Transformation.getPerspectiveProjectionMatrix(Geometry.degreesToRadians(getViewAngleInDegrees()),
 				getAspectRatio(), getN(), getF());

@@ -14,4 +14,6 @@ public interface BoundedObject3D extends Object3D {
 
 	Box3D getBoundingBoxInCameraCoordinates(Camera camera);
 
+	Box3D getBoundingBoxInViewVolumeCoordinates(Camera camera);
+
 }

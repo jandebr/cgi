@@ -6,6 +6,7 @@ import org.maia.cgi.geometry.d3.Box3D;
 import org.maia.cgi.geometry.d3.Point3D;
 import org.maia.cgi.model.d3.camera.Camera;
 import org.maia.cgi.model.d3.object.Mesh3D.Edge;
+import org.maia.cgi.transform.d3.TransformMatrix;
 import org.maia.cgi.transform.d3.Transformation;
 
 public abstract class VertexObject3D extends BaseObject3D implements MeshObject3D {
@@ -15,6 +16,8 @@ public abstract class VertexObject3D extends BaseObject3D implements MeshObject3
 	private Mesh3D meshInWorldCoordinates; // derived, cached mesh
 
 	private Mesh3D meshInCameraCoordinates; // derived, cached mesh
+
+	private Mesh3D meshInViewVolumeCoordinates; // derived, cached mesh
 
 	protected VertexObject3D(List<Point3D> vertices, List<Edge> edges) {
 		this.meshInObjectCoordinates = new Mesh3DImpl(vertices, edges);
@@ -43,6 +46,11 @@ public abstract class VertexObject3D extends BaseObject3D implements MeshObject3
 	@Override
 	protected Box3D deriveBoundingBoxInCameraCoordinates(Camera camera) {
 		return deriveBoundingBox(getVerticesInCameraCoordinates(camera));
+	}
+
+	@Override
+	protected Box3D deriveBoundingBoxInViewVolumeCoordinates(Camera camera) {
+		return deriveBoundingBox(getVerticesInViewVolumeCoordinates(camera));
 	}
 
 	private Box3D deriveBoundingBox(List<Point3D> vertices) {
@@ -88,6 +96,10 @@ public abstract class VertexObject3D extends BaseObject3D implements MeshObject3
 		return getMeshInCameraCoordinates(camera).getVertices();
 	}
 
+	public List<Point3D> getVerticesInViewVolumeCoordinates(Camera camera) {
+		return getMeshInViewVolumeCoordinates(camera).getVertices();
+	}
+
 	@Override
 	public Mesh3D getMeshInObjectCoordinates() {
 		return meshInObjectCoordinates;
@@ -109,12 +121,24 @@ public abstract class VertexObject3D extends BaseObject3D implements MeshObject3
 		return meshInCameraCoordinates;
 	}
 
+	@Override
+	public Mesh3D getMeshInViewVolumeCoordinates(Camera camera) {
+		if (meshInViewVolumeCoordinates == null) {
+			meshInViewVolumeCoordinates = deriveMeshInViewVolumeCoordinates(camera);
+		}
+		return meshInViewVolumeCoordinates;
+	}
+
 	private Mesh3D deriveMeshInWorldCoordinates() {
 		return new Mesh3DImpl(deriveVerticesInWorldCoordinates(), getEdges());
 	}
 
 	private Mesh3D deriveMeshInCameraCoordinates(Camera camera) {
 		return new Mesh3DImpl(deriveVerticesInCameraCoordinates(camera), getEdges());
+	}
+
+	private Mesh3D deriveMeshInViewVolumeCoordinates(Camera camera) {
+		return new Mesh3DImpl(deriveVerticesInViewVolumeCoordinates(camera), getEdges());
 	}
 
 	private List<Point3D> deriveVerticesInWorldCoordinates() {
@@ -124,6 +148,21 @@ public abstract class VertexObject3D extends BaseObject3D implements MeshObject3
 
 	private List<Point3D> deriveVerticesInCameraCoordinates(Camera camera) {
 		return camera.getViewingMatrix().transform(getVerticesInWorldCoordinates());
+	}
+
+	private List<Point3D> deriveVerticesInViewVolumeCoordinates(Camera camera) {
+		TransformMatrix projectionMatrix = camera.getViewVolume().getProjectionMatrix();
+		List<Point3D> projectedVertices = projectionMatrix.transform(getVerticesInCameraCoordinates(camera));
+		if (camera.getViewVolume().isPerspectiveProjection()) {
+			applyPerspectiveDivision(projectedVertices);
+		}
+		return projectedVertices;
+	}
+
+	private void applyPerspectiveDivision(List<Point3D> vertices) {
+		for (Point3D vertex : vertices) {
+			vertex.normalizeToUnitW();
+		}
 	}
 
 	private List<Edge> getEdges() {
@@ -176,6 +215,7 @@ public abstract class VertexObject3D extends BaseObject3D implements MeshObject3
 
 	private void invalidateCameraMesh() {
 		meshInCameraCoordinates = null;
+		meshInViewVolumeCoordinates = null;
 	}
 
 }

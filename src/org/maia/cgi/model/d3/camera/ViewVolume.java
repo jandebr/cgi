@@ -5,6 +5,8 @@ import org.maia.cgi.transform.d3.TransformMatrix;
 
 public interface ViewVolume {
 
+	boolean isPerspectiveProjection();
+
 	TransformMatrix getProjectionMatrix();
 
 	double getViewAngleInDegrees();
@@ -12,7 +14,7 @@ public interface ViewVolume {
 	double getAspectRatio();
 
 	double getViewPlaneZ();
-	
+
 	double getFarPlaneZ();
 
 	Rectangle2D getViewPlaneRectangle();
