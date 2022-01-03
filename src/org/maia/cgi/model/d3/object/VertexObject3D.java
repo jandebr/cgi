@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.maia.cgi.Metrics;
 import org.maia.cgi.geometry.d3.Box3D;
 import org.maia.cgi.geometry.d3.Point3D;
 import org.maia.cgi.model.d3.CoordinateFrame;
@@ -31,12 +30,23 @@ public abstract class VertexObject3D extends BaseObject3D implements MeshObject3
 	}
 
 	@Override
-	protected Box3D deriveBoundingBox(CoordinateFrame cframe, Camera camera) {
-		Metrics.getInstance().incrementBoundingBoxComputations();
+	protected Box3D deriveBoundingBoxInObjectCoordinates() {
+		return deriveBoundingBox(getVerticesInObjectCoordinates());
+	}
+
+	@Override
+	protected Box3D deriveBoundingBoxInWorldCoordinates() {
+		return deriveBoundingBox(getVerticesInWorldCoordinates());
+	}
+
+	@Override
+	protected Box3D deriveBoundingBoxInCameraCoordinates(Camera camera) {
+		return deriveBoundingBox(getVerticesInCameraCoordinates(camera));
+	}
+
+	private Box3D deriveBoundingBox(List<Point3D> vertices) {
 		Box3D bbox = null;
-		List<Point3D> vertices = getVertices(cframe, camera);
 		if (!vertices.isEmpty()) {
-			Metrics.getInstance().incrementBoundingBoxComputations();
 			Point3D vertex = vertices.get(0);
 			double x1 = vertex.getX();
 			double x2 = x1;

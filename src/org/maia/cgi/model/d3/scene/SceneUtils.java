@@ -28,8 +28,8 @@ import org.maia.cgi.transform.d3.TransformMatrix;
 public class SceneUtils {
 
 	public static Box3D getSceneProjectedBoundingBox(Scene scene, double viewAngleInDegrees, double aspectRatio) {
-		ViewVolume viewVolume = PerspectiveViewVolume.createToEncloseInDepth(
-				scene.getBoundingBox(CoordinateFrame.CAMERA), viewAngleInDegrees, aspectRatio);
+		ViewVolume viewVolume = PerspectiveViewVolume.createToEncloseInDepth(scene.getBoundingBoxInCameraCoordinates(),
+				viewAngleInDegrees, aspectRatio);
 		TransformMatrix matrix = viewVolume.getProjectionMatrix();
 		double xmin = 0, xmax = 0, ymin = 0, ymax = 0;
 		double z = viewVolume.getViewPlaneZ();
@@ -135,7 +135,7 @@ public class SceneUtils {
 	public static void moveCameraToEncloseScene(Scene scene, double viewAngleInDegrees, double aspectRatio) {
 		if (scene.getCamera() instanceof MovableCamera) {
 			MovableCamera camera = (MovableCamera) scene.getCamera();
-			Box3D box = scene.getBoundingBox(CoordinateFrame.CAMERA);
+			Box3D box = scene.getBoundingBoxInCameraCoordinates();
 			Point3D boxc = box.getCenter();
 			double top = Math.max(Math.abs(box.getY1()), Math.abs(box.getY2()));
 			double right = Math.max(Math.abs(box.getX1()), Math.abs(box.getX2()));

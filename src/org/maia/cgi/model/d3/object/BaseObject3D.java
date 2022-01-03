@@ -1,9 +1,7 @@
 package org.maia.cgi.model.d3.object;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Vector;
 
 import org.maia.cgi.Metrics;
@@ -28,11 +26,14 @@ public abstract class BaseObject3D implements BoundedObject3D, ComposableObject3
 
 	private CompositeObject3D<BaseObject3D> compositeObject; // parent object, if any
 
-	private Map<CoordinateFrame, Box3D> boundingBoxes; // cached bounding boxes
+	private Box3D boundingBoxInObjectCoordinates; // cached bounding box
+
+	private Box3D boundingBoxInWorldCoordinates; // cached bounding box
+
+	private Box3D boundingBoxInCameraCoordinates; // cached bounding box
 
 	protected BaseObject3D() {
 		this.ownCompositeTransform = new TwoWayCompositeTransform();
-		this.boundingBoxes = new HashMap<CoordinateFrame, Box3D>(5);
 	}
 
 	@Override
@@ -257,12 +258,58 @@ public abstract class BaseObject3D implements BoundedObject3D, ComposableObject3
 	}
 
 	private void invalidateWorldBoundingBox() {
-		boundingBoxes.remove(CoordinateFrame.WORLD);
+		boundingBoxInWorldCoordinates = null;
 	}
 
 	private void invalidateCameraBoundingBox() {
-		boundingBoxes.remove(CoordinateFrame.CAMERA);
+		boundingBoxInCameraCoordinates = null;
 	}
+
+	@Override
+	public final Box3D getBoundingBox(CoordinateFrame cframe, Camera camera) {
+		if (cframe.equals(CoordinateFrame.OBJECT)) {
+			return getBoundingBoxInObjectCoordinates();
+		} else if (cframe.equals(CoordinateFrame.WORLD)) {
+			return getBoundingBoxInWorldCoordinates();
+		} else if (cframe.equals(CoordinateFrame.CAMERA)) {
+			return getBoundingBoxInCameraCoordinates(camera);
+		} else {
+			return null;
+		}
+	}
+
+	@Override
+	public Box3D getBoundingBoxInObjectCoordinates() {
+		if (boundingBoxInObjectCoordinates == null) {
+			Metrics.getInstance().incrementBoundingBoxComputations();
+			boundingBoxInObjectCoordinates = deriveBoundingBoxInObjectCoordinates();
+		}
+		return boundingBoxInObjectCoordinates;
+	}
+
+	@Override
+	public Box3D getBoundingBoxInWorldCoordinates() {
+		if (boundingBoxInWorldCoordinates == null) {
+			Metrics.getInstance().incrementBoundingBoxComputations();
+			boundingBoxInWorldCoordinates = deriveBoundingBoxInWorldCoordinates();
+		}
+		return boundingBoxInWorldCoordinates;
+	}
+
+	@Override
+	public Box3D getBoundingBoxInCameraCoordinates(Camera camera) {
+		if (boundingBoxInCameraCoordinates == null) {
+			Metrics.getInstance().incrementBoundingBoxComputations();
+			boundingBoxInCameraCoordinates = deriveBoundingBoxInCameraCoordinates(camera);
+		}
+		return boundingBoxInCameraCoordinates;
+	}
+
+	protected abstract Box3D deriveBoundingBoxInObjectCoordinates();
+
+	protected abstract Box3D deriveBoundingBoxInWorldCoordinates();
+
+	protected abstract Box3D deriveBoundingBoxInCameraCoordinates(Camera camera);
 
 	@SuppressWarnings("unchecked")
 	@Override
@@ -273,18 +320,6 @@ public abstract class BaseObject3D implements BoundedObject3D, ComposableObject3
 	protected void setCompositeObject(CompositeObject3D<BaseObject3D> compositeObject) {
 		this.compositeObject = compositeObject;
 	}
-
-	@Override
-	public final Box3D getBoundingBox(CoordinateFrame cframe, Camera camera) {
-		Box3D bbox = boundingBoxes.get(cframe);
-		if (bbox == null) {
-			bbox = deriveBoundingBox(cframe, camera);
-			boundingBoxes.put(cframe, bbox);
-		}
-		return bbox;
-	}
-
-	protected abstract Box3D deriveBoundingBox(CoordinateFrame cframe, Camera camera);
 
 	@Override
 	public void intersectWithEyeRay(LineSegment3D ray, Scene scene, Collection<ObjectSurfacePoint3D> intersections,

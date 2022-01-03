@@ -13,7 +13,6 @@ import org.maia.cgi.geometry.d3.Box3D;
 import org.maia.cgi.geometry.d3.LineSegment3D;
 import org.maia.cgi.geometry.d3.Plane3D;
 import org.maia.cgi.geometry.d3.Point3D;
-import org.maia.cgi.model.d3.CoordinateFrame;
 import org.maia.cgi.model.d3.camera.Camera;
 import org.maia.cgi.model.d3.camera.ViewVolume;
 import org.maia.cgi.model.d3.object.Object3D;
@@ -111,7 +110,7 @@ public class NonUniformlyBinnedSceneViewPlaneIndex extends NonUniformlyBinnedSce
 
 	private Rectangle2D getObjectBoundsClippedOnViewPlane(Object3D object) {
 		if (object.isBounded()) {
-			Box3D box = object.asBoundedObject().getBoundingBox(CoordinateFrame.CAMERA, getCamera());
+			Box3D box = object.asBoundedObject().getBoundingBoxInCameraCoordinates(getCamera());
 			return projectAndClipOntoViewPlane(box);
 		} else {
 			return getViewVolume().getViewPlaneRectangle(); // suppose it covers the entire view plane
@@ -181,8 +180,8 @@ public class NonUniformlyBinnedSceneViewPlaneIndex extends NonUniformlyBinnedSce
 
 		@Override
 		public int compare(Object3D o1, Object3D o2) {
-			double nearDepth1 = -o1.asBoundedObject().getBoundingBox(CoordinateFrame.CAMERA, getCamera()).getZ2();
-			double nearDepth2 = -o2.asBoundedObject().getBoundingBox(CoordinateFrame.CAMERA, getCamera()).getZ2();
+			double nearDepth1 = -o1.asBoundedObject().getBoundingBoxInCameraCoordinates(getCamera()).getZ2();
+			double nearDepth2 = -o2.asBoundedObject().getBoundingBoxInCameraCoordinates(getCamera()).getZ2();
 			if (nearDepth1 < nearDepth2) {
 				return -1;
 			} else if (nearDepth1 > nearDepth2) {

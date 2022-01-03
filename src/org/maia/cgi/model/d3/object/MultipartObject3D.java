@@ -4,7 +4,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Vector;
 
-import org.maia.cgi.Metrics;
 import org.maia.cgi.geometry.d3.Box3D;
 import org.maia.cgi.geometry.d3.LineSegment3D;
 import org.maia.cgi.model.d3.CoordinateFrame;
@@ -52,8 +51,21 @@ public class MultipartObject3D<T extends ComposableObject3D> extends BaseObject3
 	}
 
 	@Override
-	protected Box3D deriveBoundingBox(CoordinateFrame cframe, Camera camera) {
-		Metrics.getInstance().incrementBoundingBoxComputations();
+	protected Box3D deriveBoundingBoxInObjectCoordinates() {
+		return deriveBoundingBox(CoordinateFrame.OBJECT, null);
+	}
+
+	@Override
+	protected Box3D deriveBoundingBoxInWorldCoordinates() {
+		return deriveBoundingBox(CoordinateFrame.WORLD, null);
+	}
+
+	@Override
+	protected Box3D deriveBoundingBoxInCameraCoordinates(Camera camera) {
+		return deriveBoundingBox(CoordinateFrame.CAMERA, camera);
+	}
+
+	private Box3D deriveBoundingBox(CoordinateFrame cframe, Camera camera) {
 		Box3D bbox = null;
 		for (Iterator<T> it = getParts().iterator(); it.hasNext();) {
 			Object3D part = it.next();

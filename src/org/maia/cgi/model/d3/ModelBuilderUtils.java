@@ -81,31 +81,31 @@ public class ModelBuilderUtils {
 	}
 
 	public static void centerAtOrigin(BaseObject3D object) {
-		Box3D box = object.getBoundingBox(CoordinateFrame.WORLD, null);
+		Box3D box = object.getBoundingBoxInWorldCoordinates();
 		Point3D center = box.getCenter();
 		object.translate(-center.getX(), -center.getY(), -center.getZ());
 	}
 
 	public static void centerAtOriginXY(BaseObject3D object) {
-		Box3D box = object.getBoundingBox(CoordinateFrame.WORLD, null);
+		Box3D box = object.getBoundingBoxInWorldCoordinates();
 		Point3D center = box.getCenter();
 		object.translate(-center.getX(), -center.getY(), 0);
 	}
 
 	public static void centerAtOriginXZ(BaseObject3D object) {
-		Box3D box = object.getBoundingBox(CoordinateFrame.WORLD, null);
+		Box3D box = object.getBoundingBoxInWorldCoordinates();
 		Point3D center = box.getCenter();
 		object.translate(-center.getX(), 0, -center.getZ());
 	}
 
 	public static void centerAtOriginYZ(BaseObject3D object) {
-		Box3D box = object.getBoundingBox(CoordinateFrame.WORLD, null);
+		Box3D box = object.getBoundingBoxInWorldCoordinates();
 		Point3D center = box.getCenter();
 		object.translate(0, -center.getY(), -center.getZ());
 	}
 
 	public static void stretchToUnityBoundingBox(BaseObject3D object) {
-		Box3D box = object.getBoundingBox(CoordinateFrame.WORLD, null);
+		Box3D box = object.getBoundingBoxInWorldCoordinates();
 		Point3D center = box.getCenter();
 		object.translate(-center.getX(), -center.getY(), -center.getZ());
 		if (box.getWidth() > 0)

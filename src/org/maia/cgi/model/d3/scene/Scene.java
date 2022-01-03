@@ -1,8 +1,6 @@
 package org.maia.cgi.model.d3.scene;
 
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Vector;
 
 import org.maia.cgi.Memoise;
@@ -37,7 +35,11 @@ public class Scene implements CameraObserver, Memoise {
 
 	private Collection<LightSource> lightSources = new Vector<LightSource>();
 
-	private Map<CoordinateFrame, Box3D> boundingBoxes = new HashMap<CoordinateFrame, Box3D>(5);
+	private Box3D boundingBoxInObjectCoordinates; // cached bounding box
+
+	private Box3D boundingBoxInWorldCoordinates; // cached bounding box
+
+	private Box3D boundingBoxInCameraCoordinates; // cached bounding box
 
 	private double distanceOutsideScene = -1.0;
 
@@ -105,13 +107,25 @@ public class Scene implements CameraObserver, Memoise {
 		}
 	}
 
-	public Box3D getBoundingBox(CoordinateFrame cframe) {
-		Box3D bbox = boundingBoxes.get(cframe);
-		if (bbox == null) {
-			bbox = deriveBoundingBox(cframe);
-			boundingBoxes.put(cframe, bbox);
+	public Box3D getBoundingBoxInObjectCoordinates() {
+		if (boundingBoxInObjectCoordinates == null) {
+			boundingBoxInObjectCoordinates = deriveBoundingBox(CoordinateFrame.OBJECT);
 		}
-		return bbox;
+		return boundingBoxInObjectCoordinates;
+	}
+
+	public Box3D getBoundingBoxInWorldCoordinates() {
+		if (boundingBoxInWorldCoordinates == null) {
+			boundingBoxInWorldCoordinates = deriveBoundingBox(CoordinateFrame.WORLD);
+		}
+		return boundingBoxInWorldCoordinates;
+	}
+
+	public Box3D getBoundingBoxInCameraCoordinates() {
+		if (boundingBoxInCameraCoordinates == null) {
+			boundingBoxInCameraCoordinates = deriveBoundingBox(CoordinateFrame.CAMERA);
+		}
+		return boundingBoxInCameraCoordinates;
 	}
 
 	private Box3D deriveBoundingBox(CoordinateFrame cframe) {
@@ -131,12 +145,14 @@ public class Scene implements CameraObserver, Memoise {
 	}
 
 	private void invalidateBoundingBoxes() {
-		boundingBoxes.clear();
+		boundingBoxInObjectCoordinates = null;
+		boundingBoxInWorldCoordinates = null;
+		boundingBoxInCameraCoordinates = null;
 		distanceOutsideScene = -1.0;
 	}
 
 	private void invalidateCameraBoundingBox() {
-		boundingBoxes.remove(CoordinateFrame.CAMERA);
+		boundingBoxInCameraCoordinates = null;
 	}
 
 	private void invalidateSpatialIndices() {
@@ -146,7 +162,7 @@ public class Scene implements CameraObserver, Memoise {
 
 	public double getDistanceOutsideScene() {
 		if (distanceOutsideScene < 0) {
-			Box3D bbox = getBoundingBox(CoordinateFrame.WORLD);
+			Box3D bbox = getBoundingBoxInWorldCoordinates();
 			distanceOutsideScene = 2.0 * Math.max(bbox.getDepth(), Math.max(bbox.getWidth(), bbox.getHeight()));
 		}
 		return distanceOutsideScene;

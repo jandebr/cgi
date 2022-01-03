@@ -4,7 +4,6 @@ import java.util.Collection;
 import java.util.Vector;
 
 import org.maia.cgi.geometry.d3.Box3D;
-import org.maia.cgi.model.d3.CoordinateFrame;
 import org.maia.cgi.model.d3.object.Object3D;
 import org.maia.cgi.model.d3.scene.Scene;
 import org.maia.cgi.model.d3.scene.SceneUtils;
@@ -40,13 +39,13 @@ public abstract class BaseSceneSpatialIndex implements SceneSpatialIndex {
 	}
 
 	protected Box3D getSceneBox() {
-		return getScene().getBoundingBox(CoordinateFrame.CAMERA);
+		return getScene().getBoundingBoxInCameraCoordinates();
 	}
 
 	protected Box3D getObjectBox(Object3D object) {
 		Box3D box = null;
 		if (object.isBounded()) {
-			box = object.asBoundedObject().getBoundingBox(CoordinateFrame.CAMERA, getScene().getCamera());
+			box = object.asBoundedObject().getBoundingBoxInCameraCoordinates(getScene().getCamera());
 		}
 		return box;
 	}

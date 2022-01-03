@@ -7,7 +7,6 @@ import org.maia.cgi.compose.d3.DepthFunction;
 import org.maia.cgi.compose.d3.SigmoidDepthFunction;
 import org.maia.cgi.geometry.d3.Box3D;
 import org.maia.cgi.geometry.d3.Point3D;
-import org.maia.cgi.model.d3.CoordinateFrame;
 import org.maia.cgi.model.d3.camera.Camera;
 import org.maia.cgi.model.d3.camera.PerspectiveViewVolume;
 import org.maia.cgi.model.d3.camera.RevolvingCamera;
@@ -58,7 +57,7 @@ public abstract class SceneBuilder {
 	}
 
 	protected DepthFunction createDarknessDepthFunction(Scene scene, RenderOptions options) {
-		Box3D bbox = scene.getBoundingBox(CoordinateFrame.CAMERA);
+		Box3D bbox = scene.getBoundingBoxInCameraCoordinates();
 		double nearDepth = -bbox.getZ2();
 		double farDepth = -bbox.getZ1();
 		return SigmoidDepthFunction.createFilter(nearDepth, farDepth, 0.6, 0.4);

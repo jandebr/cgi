@@ -17,7 +17,6 @@ import org.maia.cgi.geometry.d3.LineSegment3D;
 import org.maia.cgi.geometry.d3.Plane3D;
 import org.maia.cgi.geometry.d3.Point3D;
 import org.maia.cgi.geometry.d3.Vector3D;
-import org.maia.cgi.model.d3.CoordinateFrame;
 import org.maia.cgi.model.d3.OrthographicProjection;
 import org.maia.cgi.model.d3.camera.Camera;
 import org.maia.cgi.model.d3.object.Mesh3D.Edge;
@@ -155,7 +154,7 @@ public class PolygonalObject3D extends VertexObject3D {
 	}
 
 	private boolean insideBoundingBox(Point3D positionInCamera, Scene scene) {
-		Box3D bbox = getBoundingBox(CoordinateFrame.CAMERA, scene.getCamera());
+		Box3D bbox = getBoundingBoxInCameraCoordinates(scene.getCamera());
 		if (bbox.getWidth() <= APPROXIMATE_ZERO || bbox.getHeight() <= APPROXIMATE_ZERO
 				|| bbox.getDepth() <= APPROXIMATE_ZERO) {
 			// For planes perpendicular to a side of the view volume, finite precision computation requires a more
