@@ -1,6 +1,6 @@
 package org.maia.cgi.model.d3.scene.index;
 
-import java.util.List;
+import java.util.Iterator;
 
 import org.maia.cgi.geometry.d3.Point3D;
 import org.maia.cgi.model.d3.object.Object3D;
@@ -29,8 +29,8 @@ public interface SceneViewPlaneIndex extends SceneIndex {
 	 *            A point on the view plane
 	 * @param reusableObjects
 	 *            Objects that can be reused in the context of the current thread
-	 * @return A filtered list of scene objects
+	 * @return An iterator over a filtered list of scene objects
 	 */
-	List<Object3D> getViewPlaneObjects(Point3D pointOnViewPlane, ReusableObjectPack reusableObjects);
+	Iterator<Object3D> getViewPlaneObjects(Point3D pointOnViewPlane, ReusableObjectPack reusableObjects);
 
 }

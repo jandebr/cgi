@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Vector;
@@ -405,13 +406,13 @@ public class RaytraceRenderer extends BaseSceneRenderer {
 			Scene scene = state.getScene();
 			Point3D pointOnViewPlane = ray.getP1();
 			ReusableObjectPack reusableObjects = getReusableObjects();
-			List<Object3D> objects = state.getViewPlaneIndex().getViewPlaneObjects(pointOnViewPlane, reusableObjects);
-			if (objects != null) {
-				for (Object3D object : objects) {
-					if (object.isRaytraceable()) {
-						object.asRaytraceableObject().intersectWithEyeRay(ray, scene, intersections, options,
-								reusableObjects);
-					}
+			Iterator<Object3D> objectsIterator = state.getViewPlaneIndex().getViewPlaneObjects(pointOnViewPlane,
+					reusableObjects);
+			while (objectsIterator.hasNext()) {
+				Object3D object = objectsIterator.next();
+				if (object.isRaytraceable()) {
+					object.asRaytraceableObject().intersectWithEyeRay(ray, scene, intersections, options,
+							reusableObjects);
 				}
 			}
 			// From backdrop, if any

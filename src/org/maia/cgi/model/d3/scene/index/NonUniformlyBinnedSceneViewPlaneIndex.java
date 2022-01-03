@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 import org.maia.cgi.geometry.d2.Point2D;
 import org.maia.cgi.geometry.d2.Rectangle2D;
@@ -56,22 +57,22 @@ public class NonUniformlyBinnedSceneViewPlaneIndex extends NonUniformlyBinnedSce
 	}
 
 	@Override
-	public List<Object3D> getViewPlaneObjects(Point3D pointOnViewPlane, ReusableObjectPack reusableObjects) {
+	public Iterator<Object3D> getViewPlaneObjects(Point3D pointOnViewPlane, ReusableObjectPack reusableObjects) {
 		SpatialBin leafBin = findLeafBinContaining(pointOnViewPlane, reusableObjects);
 		if (leafBin != null) {
-			return leafBin.getContainedObjects();
+			return new ViewPlaneObjectsIterator(leafBin, pointOnViewPlane);
 		} else {
-			return null;
+			return EmptyViewPlaneObjectsIterator.instance;
 		}
 	}
 
-	private SpatialBin findLeafBinContaining(Point3D point, ReusableObjectPack reusableObjects) {
+	private SpatialBin findLeafBinContaining(Point3D pointOnViewPlane, ReusableObjectPack reusableObjects) {
 		SpatialBin leafBin = null;
 		SpatialBin lastBin = reusableObjects.getLastVisitedLeafBin().getBin();
 		if (lastBin != null) {
-			leafBin = lastBin.findLeafBinContaining(point);
+			leafBin = lastBin.findLeafBinContaining(pointOnViewPlane);
 		} else {
-			leafBin = super.findLeafBinContaining(point);
+			leafBin = super.findLeafBinContaining(pointOnViewPlane);
 		}
 		reusableObjects.getLastVisitedLeafBin().setBin(leafBin);
 		return leafBin;
@@ -190,6 +191,75 @@ public class NonUniformlyBinnedSceneViewPlaneIndex extends NonUniformlyBinnedSce
 				return 0;
 			}
 		}
+	}
+
+	private class ViewPlaneObjectsIterator implements Iterator<Object3D> {
+
+		private List<Object3D> leafBinObjects;
+
+		private int currentIndex;
+
+		private Point3D pointOnViewPlane;
+
+		public ViewPlaneObjectsIterator(SpatialBin leafBin, Point3D pointOnViewPlane) {
+			this.leafBinObjects = leafBin.getContainedObjects();
+			this.pointOnViewPlane = pointOnViewPlane;
+		}
+
+		@Override
+		public boolean hasNext() {
+			provisionNextObject();
+			return currentIndex < leafBinObjects.size();
+		}
+
+		@Override
+		public Object3D next() {
+			if (hasNext()) {
+				return leafBinObjects.get(currentIndex++);
+			} else {
+				throw new NoSuchElementException();
+			}
+		}
+
+		@Override
+		public void remove() {
+			throw new UnsupportedOperationException();
+		}
+
+		private void provisionNextObject() {
+			while (currentIndex < leafBinObjects.size() && !accept(leafBinObjects.get(currentIndex))) {
+				currentIndex++;
+			}
+		}
+
+		private boolean accept(Object3D object) {
+			return getObjectBox(object).contains(pointOnViewPlane);
+		}
+
+	}
+
+	private static class EmptyViewPlaneObjectsIterator implements Iterator<Object3D> {
+
+		public static EmptyViewPlaneObjectsIterator instance = new EmptyViewPlaneObjectsIterator();
+
+		private EmptyViewPlaneObjectsIterator() {
+		}
+
+		@Override
+		public boolean hasNext() {
+			return false;
+		}
+
+		@Override
+		public Object3D next() {
+			throw new NoSuchElementException();
+		}
+
+		@Override
+		public void remove() {
+			throw new UnsupportedOperationException();
+		}
+
 	}
 
 	public static class ReusableLastVisitedLeafBin {
