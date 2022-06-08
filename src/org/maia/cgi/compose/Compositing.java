@@ -173,8 +173,12 @@ public class Compositing {
 		graphics2D.dispose();
 	}
 
+	public static void makeImageFullyTransparent(BufferedImage image, Color color) {
+		fillImageWithSolidColor(image, new Color(color.getRGB() & 0x00ffffff, true)); // alpha = 0
+	}
+
 	public static void makeImageFullyTransparent(BufferedImage image) {
-		fillImageWithSolidColor(image, new Color(0x00000000, true));
+		makeImageFullyTransparent(image, Color.BLACK);
 	}
 
 	/**
