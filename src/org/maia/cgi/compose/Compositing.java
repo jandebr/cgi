@@ -160,9 +160,10 @@ public class Compositing {
 		int sw = (int) Math.floor(image.getWidth() * sx);
 		int sh = (int) Math.floor(image.getHeight() * sy);
 		BufferedImage scaledImage = new BufferedImage(sw, sh, BufferedImage.TYPE_INT_ARGB);
-		Graphics2D g2 = scaledImage.createGraphics();
+		Graphics2D graphics2D = scaledImage.createGraphics();
 		AffineTransform at = AffineTransform.getScaleInstance(sx, sy);
-		g2.drawRenderedImage(image, at);
+		graphics2D.drawRenderedImage(image, at);
+		graphics2D.dispose();
 		return scaledImage;
 	}
 

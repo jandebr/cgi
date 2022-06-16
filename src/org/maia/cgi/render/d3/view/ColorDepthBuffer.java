@@ -42,14 +42,18 @@ public class ColorDepthBuffer {
 		int height = layerImage.getHeight();
 		for (int i = 0; i < height; i++) {
 			int y = y0 + i;
-			for (int j = 0; j < width; j++) {
-				int rgb = layerImage.getRGB(j, i);
-				int alpha = (rgb & 0xff000000) >> 24;
-				if (alpha != 0) {
-					int x = x0 + j;
-					if (depth <= getDepth(x, y)) {
-						setRGB(x, y, rgb);
-						setDepth(x, y, depth);
+			if (y >= 0 && y < getHeight()) {
+				for (int j = 0; j < width; j++) {
+					int rgb = layerImage.getRGB(j, i);
+					int alpha = (rgb & 0xff000000) >> 24;
+					if (alpha != 0) {
+						int x = x0 + j;
+						if (x >= 0 && x < getWidth()) {
+							if (depth <= getDepth(x, y)) {
+								setRGB(x, y, rgb);
+								setDepth(x, y, depth);
+							}
+						}
 					}
 				}
 			}
