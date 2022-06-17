@@ -44,12 +44,21 @@ public class ColorDepthBuffer {
 			int y = y0 + i;
 			if (y >= 0 && y < getHeight()) {
 				for (int j = 0; j < width; j++) {
-					int rgb = layerImage.getRGB(j, i);
-					int alpha = (rgb & 0xff000000) >> 24;
-					if (alpha != 0) {
-						int x = x0 + j;
-						if (x >= 0 && x < getWidth()) {
-							if (depth <= getDepth(x, y)) {
+					int x = x0 + j;
+					if (x >= 0 && x < getWidth()) {
+						int rgb = layerImage.getRGB(j, i);
+						int alpha = (rgb & 0xff000000) >> 24;
+						if (alpha != 0) { // not fully transparent
+							double depth0 = getDepth(x, y);
+							Color color0 = getColor(x, y);
+							if (alpha == 255 && depth <= depth0) {
+								setRGB(x, y, rgb);
+								setDepth(x, y, depth);
+							} else if (depth <= depth0 || !Compositing.isFullyOpaque(color0)) {
+								Color color = new Color(rgb, true);
+								Color frontColor = depth <= depth0 ? color : color0;
+								Color backColor = depth <= depth0 ? color0 : color;
+								rgb = Compositing.combineColorsByTransparency(frontColor, backColor).getRGB();
 								setRGB(x, y, rgb);
 								setDepth(x, y, depth);
 							}
