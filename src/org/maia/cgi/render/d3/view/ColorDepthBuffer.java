@@ -60,7 +60,8 @@ public class ColorDepthBuffer {
 								Color backColor = depth <= depth0 ? color0 : color;
 								rgb = Compositing.combineColorsByTransparency(frontColor, backColor).getRGB();
 								setRGB(x, y, rgb);
-								setDepth(x, y, depth);
+								if (depth <= depth0)
+									setDepth(x, y, depth);
 							}
 						}
 					}
