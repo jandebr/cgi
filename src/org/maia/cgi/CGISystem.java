@@ -11,6 +11,7 @@ public class CGISystem {
 	private CGISystem() {
 	}
 
+	@SuppressWarnings("deprecation")
 	public static double getCpuLoad() {
 		OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
 		return Math.max(0, osBean.getSystemCpuLoad());

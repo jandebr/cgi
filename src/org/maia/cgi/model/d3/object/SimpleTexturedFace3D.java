@@ -24,6 +24,8 @@ public class SimpleTexturedFace3D extends SimpleFace3D {
 
 	private TransformMatrix objectToPictureTransformMatrix;
 
+	private TransformMatrix pictureToObjectTransformMatrix;
+
 	private TextureMapHandle pictureMapHandle;
 
 	private TextureMapHandle luminanceMapHandle;
@@ -73,6 +75,7 @@ public class SimpleTexturedFace3D extends SimpleFace3D {
 			Mask pictureMask) {
 		super(pictureColor, shadingModel, createCanonicalVertices());
 		this.objectToPictureTransformMatrix = pictureRegion.createObjectToPictureTransformMatrix();
+		this.pictureToObjectTransformMatrix = pictureRegion.createPictureToObjectTransformMatrix();
 		this.pictureMapHandle = pictureMapHandle;
 		this.luminanceMapHandle = luminanceMapHandle;
 		this.transparencyMapHandle = transparencyMapHandle;
@@ -202,22 +205,26 @@ public class SimpleTexturedFace3D extends SimpleFace3D {
 	}
 
 	protected TextureMap getPictureMap() {
-		return getPictureMapHandle() == null ? null : TextureMapRegistry.getInstance().getTextureMap(
-				getPictureMapHandle());
+		return getPictureMapHandle() == null ? null
+				: TextureMapRegistry.getInstance().getTextureMap(getPictureMapHandle());
 	}
 
 	protected TextureMap getLuminanceMap() {
-		return getLuminanceMapHandle() == null ? null : TextureMapRegistry.getInstance().getTextureMap(
-				getLuminanceMapHandle());
+		return getLuminanceMapHandle() == null ? null
+				: TextureMapRegistry.getInstance().getTextureMap(getLuminanceMapHandle());
 	}
 
 	protected TextureMap getTransparencyMap() {
-		return getTransparencyMapHandle() == null ? null : TextureMapRegistry.getInstance().getTextureMap(
-				getTransparencyMapHandle());
+		return getTransparencyMapHandle() == null ? null
+				: TextureMapRegistry.getInstance().getTextureMap(getTransparencyMapHandle());
 	}
 
 	private TransformMatrix getObjectToPictureTransformMatrix() {
 		return objectToPictureTransformMatrix;
+	}
+
+	protected TransformMatrix getPictureToObjectTransformMatrix() {
+		return pictureToObjectTransformMatrix;
 	}
 
 	private TextureMapHandle getPictureMapHandle() {
@@ -255,6 +262,14 @@ public class SimpleTexturedFace3D extends SimpleFace3D {
 		}
 
 		public TransformMatrix createObjectToPictureTransformMatrix() {
+			return createPictureToObjectTransform().getReverseCompositeMatrix();
+		}
+
+		public TransformMatrix createPictureToObjectTransformMatrix() {
+			return createPictureToObjectTransform().getForwardCompositeMatrix();
+		}
+
+		private TwoWayCompositeTransform createPictureToObjectTransform() {
 			TwoWayCompositeTransform ct = new TwoWayCompositeTransform();
 			// picture in XZ-plane (iso XY)
 			double x1 = getX1();
@@ -263,7 +278,7 @@ public class SimpleTexturedFace3D extends SimpleFace3D {
 			double z2 = getY2();
 			ct.then(Transformation.getTranslationMatrix(-(x1 + x2) / 2.0, 0, -(z1 + z2) / 2.0));
 			ct.then(Transformation.getScalingMatrix(2.0 / (x2 - x1), 1.0, 2.0 / (z2 - z1)));
-			return ct.getReverseCompositeMatrix();
+			return ct;
 		}
 
 	}
